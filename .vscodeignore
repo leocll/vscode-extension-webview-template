@@ -6,3 +6,8 @@ vsc-extension-quickstart.md
 **/jsconfig.json
 **/*.map
 **/.eslintrc.json
+*.vsix
+
+web/**
+!web/dist/**
+web/dist/**/*.map

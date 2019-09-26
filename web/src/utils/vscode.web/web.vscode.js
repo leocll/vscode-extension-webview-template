@@ -87,7 +87,18 @@ class Vscode {
     getPlatform = () => {
         return this.post({cmd: `getPlatform`});
     }
+    // Terminal
+    sendCmd2Terminal = ({text, addNewLine=true, preserveFocus=true}) => {
+        return this.post({cmd: `showTextDocument`, args: {text, addNewLine, preserveFocus}, reply: false});
+    }
     // Show
+    showTextDocument = ({filePath, viewColumn=1, preserveFocus=false, preview=false}) => {
+        const args = {filePath};
+        viewColumn && (args.viewColumn = viewColumn);
+        preserveFocus && (args.preserveFocus = preserveFocus);
+        preview && (args.preview = preview);
+        return this.post({cmd: `showTextDocument`, args, reply: false});
+    }
     showTxt2Output = ({txt, preserveFocus=true}) => {
         return this.post({cmd: `showTxt2Output`, args: {txt, preserveFocus}});
     }

@@ -161,6 +161,12 @@ class WebviewApi {
             return vscode.window.showQuickPick(items, options);
             // .then(function(msg) { console.log(msg);})
         };
+        // show file
+        this.showTextDocument = ({filePath, viewColumn=vscode.ViewColumn.One, preserveFocus=false, preview=false, selection=undefined}) => {
+            vscode.window.visibleTextEditors.find(te => {
+                return te.document.uri.path === filePath;
+            }) || vscode.window.showTextDocument(vscode.Uri.file(filePath), {viewColumn, preserveFocus, preview, selection});
+        }
         // output
         this.showTxt2Output = ({txt, preserveFocus=true, line=true}) => {
             if (line) {

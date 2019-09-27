@@ -3,6 +3,9 @@
 import Vue from 'vue';
 import App from './App';
 import router from './router';
+import example from './utils/example/e.g.index';
+
+example.activate();
 
 Vue.config.productionTip = false;
 

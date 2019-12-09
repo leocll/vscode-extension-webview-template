@@ -13,7 +13,7 @@ class GlobalState {
                 this.data[key] = state[key];
             }
         }
-        isSync && this._sync();
+        isSync && this._sync(state);
         return this;
     }
     update = (state) => {

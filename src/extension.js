@@ -1,21 +1,24 @@
-// @ts-nocheck
-const example = require('./example/e.g.index');
+const example = require('./example');
 
 /**
- * @param {vscode.ExtensionContext} context
+ * Called when the extension is activated
+ * @param {import('vscode').ExtensionContext} context
  */
 function activate(context) {
-	console.log(`Extension(${example.name}) is activated.`);
-	example.activate(context);
+    console.log(`Extension(${example.name}) is activated.`);
+    example.activate(context);
 }
 exports.activate = activate;
 
-// this method is called when your extension is deactivated
+/**
+ * Called when the extension is deactivated
+ */
 function deactivate() {
-	console.log(`Extension(${example.name}) is deactivated.`);
+    example.deactivate();
+    console.log(`Extension(${example.name}) is deactivated.`);
 }
 
 module.exports = {
-	activate,
-	deactivate
+    activate,
+    deactivate
 };

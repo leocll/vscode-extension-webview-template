@@ -1,4 +1,4 @@
-import { Vscode } from '../vscode.web/web.index';
+import { Vscode } from '../vscode.web';
 
 /**
  *vscode API of business

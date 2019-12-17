@@ -22,7 +22,7 @@ export default {
         selectFile() {
             window.vscode.showOpenDialog({canSelectFiles: true}).then(msg => {
                 if (msg && msg.data) {
-                    this.msg = msg.data[0].path;
+                    this.msg = msg.data[0];
                 }
             });
         },

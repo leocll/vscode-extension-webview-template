@@ -1,4 +1,4 @@
-const WebView = require('../vscode/vscode.webview');
+const { WebView } = require('../vscode/vscode.webview');
 const { Executor, Handler } = require('../vscode/vscode.message');
 
 /**
@@ -8,7 +8,7 @@ const { Executor, Handler } = require('../vscode/vscode.message');
  * @extends {Executor}
  */
 class EGExecutor extends Executor {
-    constructor () {
+    constructor() {
         super();
         // this.api1 = () => {};
         // this.api2 = () => {};
@@ -22,7 +22,12 @@ class EGExecutor extends Executor {
  * @extends {WebView}
  */
 class EGWebView extends WebView {
-    constructor (name) {
+    /**
+     * Creates an instance of EGWebView.
+     * @param {string} name
+     * @memberof EGWebView
+     */
+    constructor(name) {
         super(name, new Handler([new EGExecutor()]));
     }
 }

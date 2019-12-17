@@ -1,19 +1,35 @@
+/**
+ * @typedef {{cmd: string, args?: any, reply?: boolean, p2p?: boolean, timeout?: number, data?: any}} Message Message
+ */
+/**
+ * Message center
+ * @param {*} poster
+ */
 function MessageCenter(poster) {
     this.index = 0;
     this.handlers = {};
-    // 接收到消息
+
+    /**
+     * On received message
+     * @type {(event: MessageEvent) => void}
+     * @typedef {{data: Message}} MessageEvent
+     */
     this.received = event => {
-        const message = event.data; // JSON数据
+        const message = event.data;
         this.emit(message);
     };
-    // 发送
-    this.post = ({cmd, args=undefined, reply=true, p2p=true, timeout=0, ext={}}) => {
-        ext.cmd = cmd;  // 执行命令
-        ext.args = args;  // 执行命令参数
-        ext.reply = reply;  // 是否回复
+
+    /**
+     * Post message
+     * @type {({cmd, args, reply, p2p, timeout}: Message, ext?: any) => Promise<Message>|undefined}
+     */
+    this.post = ({ cmd, args = undefined, reply = true, p2p = true, timeout = 0 }, ext = {}) => {
+        ext.cmd = cmd;
+        ext.args = args;
+        ext.reply = reply;
         if (reply && p2p) {
             this.index += 1;
-            ext.index = this.index;  // 保证消息1对1处理
+            ext.index = this.index; // 1 on 1
         }
         poster && poster.postMessage && poster.postMessage(ext);
         if (reply) {
@@ -24,16 +40,20 @@ function MessageCenter(poster) {
                 p2p && (f.index = this.index);
                 this.on(cmd, f);
                 timeout > 0 && setTimeout(() => {
-                    f({error: 'Operate timeout.'});
+                    f({ error: 'Operate timeout.' });
                     this.off(cmd, f);
                 }, timeout);
             });
         }
     };
-    // 订阅消息，times=0，表示一直接收，不移除
-    this.on = (cmd, handler, times=1) => {
+
+    /**
+     * Subscribe message. `times`: times of receiving message, `times = 0`: always receive.
+     * @type {(cmd: string, handler: (msg: Message) => void, times=1) => MessageCenter}
+     */
+    this.on = (cmd, handler, times = 1) => {
         if (handler && typeof handler === 'function') {
-            times === 0 && (times = -1);// -1，表示一直接收，为0时清除
+            times === 0 && (times = -1); // `-1`: always receive, `0`: clear the handler  
             handler.times = times;
         } else {
             return this;
@@ -42,7 +62,11 @@ function MessageCenter(poster) {
         this.handlers[cmd].push(handler);
         return this;
     };
-    // 触发消息
+
+    /**
+     * Emit message
+     * @type {(message: Message) => MessageCenter}
+     */
     this.emit = (message) => {
         console.log(`Received message：${message.cmd}`);
         console.log(message.data);
@@ -71,7 +95,11 @@ function MessageCenter(poster) {
         }
         return this;
     };
-    // 删除消息事件
+
+    /**
+     * Remove message handler
+     * @type {(cmd: string, handler: (message: Message) => {}) => MessageCenter}
+     */
     this.off = (cmd, handler) => {
         var hs = this.handlers[cmd];
         if (hs) {

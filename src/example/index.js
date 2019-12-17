@@ -14,9 +14,9 @@ const activate = (context) => {
     webview.activate(context, 'example.webview');
     // example.helloWorld
     context.subscriptions.push(
-        vscode.commands.registerCommand('example.helloWorld', function () {
-            utils.Api.showMessage({txt: 'Hello World!'});
-        })    
+        vscode.commands.registerCommand('example.helloWorld', function() {
+            utils.Api.showMessage({ txt: 'Hello World!' });
+        })
     );
 };
 
@@ -27,6 +27,8 @@ const deactivate = () => {
 
 module.exports = {
     name,
-	activate,
-	deactivate
+    utils,
+    webview,
+    activate,
+    deactivate
 };

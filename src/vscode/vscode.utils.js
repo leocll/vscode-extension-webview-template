@@ -8,49 +8,82 @@ const ApiPromise = (callBack) => {
         callBack(resolve, reject);
     });
 };
+const isWin = os.platform() === 'win32';
 
-// Api
+/**
+ * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
+ * @class WebviewApi
+ */
 class WebviewApi {
-    constructor () {
-        // BridgeData
+    constructor() {
+        /**
+         * Get bridge data
+         * @type {() => Thenable<any>}
+         */
         this.getBridgeData = () => {
             return ApiPromise((resolve) => {
                 resolve(this.bridgeData.cache);
             });
         };
+        /**
+         * Update bridge data
+         * @type {(items: {}) => Thenable<undefined>}
+         */
         this.updateBridgeData = (items) => {
             return ApiPromise((resolve) => {
                 this.bridgeData.updateItems(items, false);
                 resolve();
             });
         };
-        // Path
+        /**
+         * Get extension path
+         * @type {() => Thenable<string>}
+         */
         this.getExtensionPath = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.extensionPath);
             });
         };
+        /**
+         * Get workspace path
+         * @type {() => Thenable<string>}
+         */
         this.getWorkspacePath = () => {
             return ApiPromise((resolve) => {
                 resolve(vscode.workspace.rootPath);
             });
         };
+        /**
+         * Get storage path
+         * @type {() => Thenable<string>}
+         */
         this.getStoragePath = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.storagePath);
             });
         };
+        /**
+         * Get global storage path
+         * @type {() => Thenable<string>}
+         */
         this.getGlobalStoragePath = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.globalStoragePath);
             });
         };
-        // State
+        /**
+         * Get workspace state
+         * @type {() => Thenable<any>}
+         */
         this.getWorkspaceState = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.workspaceState._value);
             });
         };
+        /**
+         * Update workspace state
+         * @type {(items: any) => Thenable<undefined>}
+         */
         this.updateWorkspaceState = (states) => {
             return ApiPromise((resolve) => {
                 for (const key in states) {
@@ -62,11 +95,19 @@ class WebviewApi {
                 resolve();
             });
         };
+        /**
+         * Get global state
+         * @type {() => Thenable<any>}
+         */
         this.getGlobalState = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.globalState._value);
             });
         };
+        /**
+         * Update global state
+         * @type {(items: any) => Thenable<undefined>}
+         */
         this.updateGlobalState = (states) => {
             return ApiPromise((resolve) => {
                 for (const key in states) {
@@ -78,44 +119,62 @@ class WebviewApi {
                 resolve();
             });
         };
-        // Find
-        this.findFileInWorkspace = ({include, exclude=undefined}) => {
+        /**
+         * Find file in current workspace
+         * @type {({include, exclude}: {include: string, exclude?: string}) => Thenable<string[]>}
+         */
+        this.findFileInWorkspace = ({ include, exclude = undefined }) => {
             return ApiPromise((resolve) => {
                 vscode.workspace.findFiles(include, exclude).then((uris) => {
                     resolve(uris.map((uri) => {
-                        return uri.path;
+                        return (isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path;
                     }));
                 }, () => {
-                    resolve([]);
+                    resolve(undefined);
                 });
             });
         };
-        // Platform
+        /**
+         * Get current platform
+         * @type {() => Thenable<'aix'|'android'|'darwin'|'freebsd'|'linux'|'openbsd'|'sunos'|'win32'|'cygwin'|'netbsd'>}
+         */
         this.getPlatform = () => {
             return ApiPromise((resolve) => {
                 resolve(os.platform());
             });
         };
-        // Message
-        this.showMessage = ({txt, btns=undefined}) => {
+        /**
+         * Show message alert
+         * @type {({txt, btns}: {txt: string, btns?: string[]}) => Thenable<string>}
+         */
+        this.showMessage = ({ txt, btns = undefined }) => {
             txt = `[${this.name}] ${txt}`;
-            return vscode.window.showInformationMessage(txt, ...(btns||[]));
+            return vscode.window.showInformationMessage(txt, ...(btns || []));
             // .then(btn => {})
         };
-        // Error
-        this.showError = ({txt, btns=undefined}) => {
+        /**
+         * Show error alert
+         * @type {({txt, btns}: {txt: string, btns?: string[]}) => Thenable<string>}
+         */
+        this.showError = ({ txt, btns = undefined }) => {
             txt = `[${this.name}] ${txt}`;
-            return vscode.window.showErrorMessage(txt, ...(btns||[]));
+            return vscode.window.showErrorMessage(txt, ...(btns || []));
             // .then(btn => {})
         };
-        // Warn
-        this.showWarn = ({txt, btns=undefined}) => {
+        /**
+         * Show warn alert
+         * @type {({txt, btns}: {txt: string, btns?: string[]}) => Thenable<string>}
+         */
+        this.showWarn = ({ txt, btns = undefined }) => {
             txt = `[${this.name}] ${txt}`;
-            return vscode.window.showWarningMessage(txt, ...(btns||[]));
+            return vscode.window.showWarningMessage(txt, ...(btns || []));
             // .then(btn => {})
         };
-        // Input Box
-        this.showInputBox = ({value, prompt='', placeHolder='', password=false, ignoreFocusOut=true, validateInput=undefined}) => {
+        /**
+         * Show Input Box
+         * @type {({value, prompt, placeHolder, password, ignoreFocusOut, validateInput}: {value: string, placeHolder?:string, prompt?: string, password?: boolean, ignoreFocusOut?: boolean, validateInput?: string}) => Thenable<string>}
+         */
+        this.showInputBox = ({ value, prompt = '', placeHolder = '', password = false, ignoreFocusOut = true, validateInput = undefined }) => {
             const options = {};
             options.value = value;
             prompt && (options.prompt = prompt);
@@ -125,16 +184,22 @@ class WebviewApi {
             validateInput && (options.validateInput = validateInput);
             return vscode.window.showInputBox(options);
         };
-        // 选择本地文件
-        // vscode的bug，在ubuntu下既选文件又选文件夹会很诡异，据官方文档windows也会出现诡异情况，https://code.visualstudio.com/api/references/vscode-api#OpenDialogOptions
-        // 在ubuntu和windows下不要 canSelectFiles 和 canSelectFolders 同时为 true
-        this.showOpenDialog = ({canSelectFiles=true, canSelectFolders=false, canSelectMany=false, defaultUri=undefined, filters=undefined, openLabel=undefined}) => {
-            // canSelectFiles:true, // 是否可选文件
-            // canSelectFolders:false, // 是否可选文件夹
-            // canSelectMany:true, // 是否可以选择多个
-            // defaultUri:undefined, // 默认打开本地路径
+        /**
+         * Show open dialog, select a or some local files or folders.
+         * vscode的bug，在ubuntu下既选文件又选文件夹会很诡异，据官方文档windows也会出现诡异情况，https://code.visualstudio.com/api/references/vscode-api#OpenDialogOptions
+         * 在ubuntu和windows下不要 canSelectFiles 和 canSelectFolders 同时为 true
+         * @param {showOpenDialogOptions} any
+         * @typedef {{canSelectFiles?: boolean, canSelectFolders?: boolean, canSelectMany?: boolean, defaultUri?: string, filters?: {[name: string]: string[]}, openLabel?: string}} showOpenDialogOptions
+         * @property {boolean} canSelectFiles if can select files
+         * @property {boolean} canSelectFolders if can select folders
+         * @property {boolean} canSelectMany if can select many
+         * @property {string} defaultUri default open path
+         * @property {{[name: string]: string[]}} filters e.g.: `{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}`
+         * @property {string} openLabel button label, default: `open`
+         * @returns {Thenable<string[]|undefined>}
+         */
+        this.showOpenDialog = ({ canSelectFiles = true, canSelectFolders = false, canSelectMany = false, defaultUri = undefined, filters = undefined, openLabel = undefined }) => {
             // filters:undefined, // 筛选器，例如：{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}
-            // openLabel:undefined // 按钮文字
             const options = {};
             options.canSelectFiles = canSelectFiles;
             options.canSelectFolders = canSelectFolders;
@@ -142,16 +207,35 @@ class WebviewApi {
             defaultUri && (options.defaultUri = vscode.Uri.file(defaultUri));
             filters && (options.filters = filters);
             openLabel && (options.openLabel = openLabel);
-            return vscode.window.showOpenDialog(options);
-            // .then(function(msg){ console.log(msg.path);})
+            return ApiPromise((resolve) => {
+                vscode.window.showOpenDialog(options).then(uris => {
+                    resolve(uris && uris.map(uri => {
+                        return (isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path;
+                    }));
+                });
+            });
         };
-        // 选择框（原生下拉选择框，貌似在webview中没用）
-        this.showQuickPick = ({items, canPickMany=false, ignoreFocusOut=true, matchOnDescription=true, matchOnDetail=true, placeHolder=undefined}) => {
-            // canPickMany:false,  // 是否可多选，如果为true，则结果是一个选择数组
-            // ignoreFocusOut:true, // 默认false，设置为true时鼠标点击别的地方输入框不会消失
-            // matchOnDescription:false, // 过滤选择时包含描述的可选标志
-            // matchOnDetail:true, // 过滤选择时包含细节的可选标志
-            // placeHolder:undefined, // 输入框内的提示
+        /**
+         * Show save dialog, select a local file path
+         * @type {({defaultUri, filters, saveLabel}: {defaultUri?: string, filters?: {string: string[]}, saveLabel?: string}) => Thenable<string|undefined>}
+         * @property filters e.g.: {'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}
+         */
+        this.showSaveDialog = ({ defaultUri = undefined, filters = undefined, saveLabel = undefined }) => {
+            const options = {};
+            defaultUri && (options.defaultUri = vscode.Uri.file(defaultUri));
+            filters && (options.filters = filters);
+            saveLabel && (options.openLabel = saveLabel);
+            return ApiPromise((resolve) => {
+                vscode.window.showSaveDialog(options).then(uri => {
+                    resolve(uri ? ((isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path) : undefined);
+                });
+            });
+        };
+        /**
+         * Show pick dialog
+         * @type {({items, canPickMany, ignoreFocusOut, matchOnDescription, matchOnDetail, placeHolder}: {items: string[]|Thenable<string[]>, canPickMany?: boolean, ignoreFocusOut?: boolean, matchOnDescription?: boolean, matchOnDetail?: boolean, placeHolder?: string}) => Thenable<string>}
+         */
+        this.showQuickPick = ({ items, canPickMany = false, ignoreFocusOut = true, matchOnDescription = true, matchOnDetail = true, placeHolder = undefined }) => {
             const options = {};
             options.canPickMany = canPickMany;
             options.ignoreFocusOut = ignoreFocusOut;
@@ -159,16 +243,21 @@ class WebviewApi {
             options.matchOnDetail = matchOnDetail;
             placeHolder && (options.placeHolder = placeHolder);
             return vscode.window.showQuickPick(items, options);
-            // .then(function(msg) { console.log(msg);})
         };
-        // show file
-        this.showTextDocument = ({filePath, viewColumn=vscode.ViewColumn.One, preserveFocus=false, preview=false, selection=undefined}) => {
+        /**
+         * Show file
+         * @type {({filePath, viewColumn, preserveFocus, preview}: {filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean}) => void}
+         */
+        this.showTextDocument = ({ filePath, viewColumn = vscode.ViewColumn.One, preserveFocus = false, preview = false }) => {
             vscode.window.visibleTextEditors.find(te => {
                 return te.document.uri.path === filePath;
-            }) || vscode.window.showTextDocument(vscode.Uri.file(filePath), {viewColumn, preserveFocus, preview, selection});
-        }
-        // output
-        this.showTxt2Output = ({txt, preserveFocus=true, line=true}) => {
+            }) || vscode.window.showTextDocument(vscode.Uri.file(filePath), { viewColumn, preserveFocus, preview });
+        };
+        /**
+         * Show txt to output
+         * @type {({txt, preserveFocus, line}: {txt: string, preserveFocus?: boolean, line?: boolean}) => void}
+         */
+        this.showTxt2Output = ({ txt, preserveFocus = false, line = true }) => {
             if (line) {
                 this.output.appendLine(txt);
             } else {
@@ -176,36 +265,51 @@ class WebviewApi {
             }
             this.output.show(preserveFocus);
         };
-        // terminal
-        this.sendCmd2Terminal = ({text, addNewLine=true, preserveFocus=true}) => {
-            this.terminal.sendText(text, addNewLine);
+        /**
+         * Send cmd to terminal
+         * @type {({cmd, addNewLine, preserveFocus}: {cmd: string, addNewLine?: boolean, preserveFocus?: boolean}) => void}
+         */
+        this.sendCmd2Terminal = ({ cmd, addNewLine = true, preserveFocus = false }) => {
+            this.terminal.sendText(cmd, addNewLine);
             this.terminal.show(preserveFocus);
         };
         /***************************** File System *****************************/
-        // Exists
-        this.exists4Path = ({path}) => {
+        /**
+         * a File or folder if exists
+         * @type {({path}: {path: string}) => Thenable<boolean>}
+         */
+        this.exists4Path = ({ path }) => {
             return ApiPromise((resolve) => {
                 fs.exists(path, resolve);
             });
         };
-        // Stat
-        this.getStat4Path = ({path}) => {
+        /**
+         * Get stat for path
+         * @type {({path}: {path: string}) => Thenable<{error?: string, data: undefined|{isFile: boolean, isDirectory: boolean, isSymbolicLink: boolean}}>}
+         */
+        this.getStat4Path = ({ path }) => {
             return ApiPromise((resolve) => {
                 fs.stat(path, (err, stats) => {
-                    resolve({error: err, data: stats ? {
-                        isFile: stats.isFile(),
-                        isDirectory: stats.isDirectory(),
-                        // isBlockDevice: stats.isDirectory(),
-                        // isCharacterDevice: stats.isCharacterDevice(),
-                        isSymbolicLink: stats.isSymbolicLink(),
-                        // isFIFO: stats.isFIFO(),
-                        // isSocket: stats.isSocket(),
-                    } : undefined});
+                    resolve({
+                        error: err.message,
+                        data: stats ? {
+                            isFile: stats.isFile(),
+                            isDirectory: stats.isDirectory(),
+                            // isBlockDevice: stats.isDirectory(),
+                            // isCharacterDevice: stats.isCharacterDevice(),
+                            isSymbolicLink: stats.isSymbolicLink(),
+                            // isFIFO: stats.isFIFO(),
+                            // isSocket: stats.isSocket(),
+                        } : undefined
+                    });
                 });
             });
         };
-        // Read file
-        this.readFile = ({path, options=undefined}) => {
+        /**
+         * Read file
+         * @type {({path, options}: {path: string, options?: 'hex'|'json'|'string'}) => Thenable<{error?: string, data: any}>}
+         */
+        this.readFile = ({ path, options = undefined }) => {
             return ApiPromise((resolve) => {
                 fs.readFile(path, (err, data) => {
                     let oerr = undefined;
@@ -228,74 +332,88 @@ class WebviewApi {
                             odata = data.toString();
                         }
                     } else {
-                        oerr = `Failed to read file: ${path}`;
+                        oerr = err.message || `Failed to read file: ${path}`;
                     }
-                    resolve({error: oerr || err, data: odata || data});
+                    resolve({ error: oerr, data: odata || data });
                 });
             });
         };
-        // Write file
-        this.writeFile = ({path, data, options=undefined}) => {
+        /**
+         * Write file
+         * @type {({path, data, options}: {path: string, data: string|[]|{}, options?: {encoding?: string|undefined, mode?: number|string, flag?: string}|string|undefined}) => Thenable<{error?: string|undefined}>}
+         */
+        this.writeFile = ({ path, data, options = undefined }) => {
             return ApiPromise((resolve) => {
                 fs.writeFile(path, data, options, (err) => {
-                    resolve({error: err && `Failed to write file: ${path}`});
+                    resolve({ error: err.message || `Failed to write file: ${path}` });
                 });
             });
         };
-        // Request
-        this.request = ({url, method='POST', data=undefined, headers={"content-type": "application/json"}}) => {
+        /**
+         * Request
+         * @type {({}: {url: string, method?: string, data?: {}, headers?: {}}) => Thenable<{error?: string, body: any, statusCode: number, statusMessage:string}>}
+         */
+        this.request = ({ url, method = 'POST', data = undefined, headers = { "content-type": "application/json" } }) => {
             return ApiPromise((resolve) => {
-                request({url, method, headers, body: data}, (error, response, body) => {
+                request({ url, method, headers, body: data }, (error, response, body) => {
                     error && typeof error !== 'string' && (error = error.message || error.toString());
-                    resolve({error, response, body});
+                    resolve({ error, body, statusCode: response.statusCode, statusMessage: response.statusMessage });
                 });
             });
         };
     }
     get output() {
-        this._output || (this._output = vscode.window.createOutputChannel(this.name));
+        if (!this._output) {
+            this._output = vscode.window.createOutputChannel(this.name);
+            this._output.show(true);
+        }
         return this._output;
     }
     get terminal() {
         this._terminal || (this._terminal = vscode.window.createTerminal(this.name));
         return this._terminal;
     }
-    get name() {
-        return this._name;
-    }
-    get context() {
-        return this._context;
-    }
-    get bridgeData() {
-        return this._bridgeData;
-    }
+    get name() { return this._name; }
+    get context() { return this._context; }
+    get bridgeData() { return this._bridgeData; }
+
+    /**
+     * Activate
+     * @param {vscode.ExtensionContext} context
+     * @param {string} name
+     * @param {import('./vscode.bridge')} bridgeData
+     * @returns {this}
+     * @memberof WebviewApi
+     */
     activate(context, name, bridgeData) {
         this._context = context;
         this._name = name;
         this._bridgeData = bridgeData;
+        return this;
     }
-    deactivate() {
-    }
+    deactivate() {}
 }
 
 class Utils {
     constructor() {
         this._Api = new WebviewApi();
     }
-    get Api() {
-        return this._Api;    
-    }
-    get bridgeData() {
-        return this.Api.bridgeData;
-    }
-    get context() {
-        return this.Api.context;
-    }
-    get name() {
-        return this.Api.name;
-    }
+    get Api() { return this._Api; }
+    get bridgeData() { return this.Api.bridgeData; }
+    get context() { return this.Api.context; }
+    get name() { return this.Api.name; }
+
+    /**
+     * Activate
+     * @param {vscode.ExtensionContext} context
+     * @param {string} name
+     * @param {import('./vscode.bridge')} bridgeData
+     * @returns {this}
+     * @memberof WebviewApi
+     */
     activate(context, name, bridgeData) {
         this.Api.activate(context, name, bridgeData);
+        return this;
     }
     deactivate() {
         this.Api.deactivate();

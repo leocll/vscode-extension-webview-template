@@ -7,5 +7,5 @@
 
 ### 2、架构
 `WebviewData` = `GlobalState` + `WorkspaceState` + `BridgeData`  
-> 1. 修改`GlobalState`、`WorkspaceState`、`BridgeData`时，`WebviewData`的数据也会发送改变
+> 1. 修改`GlobalState`、`WorkspaceState`、`BridgeData`时，`WebviewData`的数据也会发生改变
 > 2. 设计初衷是`WebviewData`为全局的`UI`提供数据绑定，`GlobalState`、`WorkspaceState`、`BridgeData`为`WebviewData`做数据驱动

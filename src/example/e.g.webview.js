@@ -1,19 +1,4 @@
 const { WebView } = require('../vscode/vscode.webview');
-const { Executor, Handler } = require('../vscode/vscode.message');
-
-/**
- *WebView API of business
- *
- * @class EGExecutor
- * @extends {Executor}
- */
-class EGExecutor extends Executor {
-    constructor() {
-        super();
-        // this.api1 = () => {};
-        // this.api2 = () => {};
-    }
-}
 
 /**
  *Add business
@@ -24,11 +9,28 @@ class EGExecutor extends Executor {
 class EGWebView extends WebView {
     /**
      * Creates an instance of EGWebView.
-     * @param {string} name
      * @memberof EGWebView
      */
-    constructor(name) {
-        super(name, new Handler([new EGExecutor()]));
+    constructor() {
+        super();
+        this.handler.addApi({
+            // api1: () => {},
+            // api2: () => {}
+        });
+    }
+    
+    /**
+     * Activate
+     * @param {import('vscode').ExtensionContext} context vscode extension context
+     * @param {string} name webview name
+     * @param {string} cmdName cmd name
+     * @param {string} [htmlPath=path.join(context.extensionPath, 'web', 'dist', 'index.html')] html path
+     * @returns {this}
+     * @memberof WebView
+     */
+    activate(context, name, cmdName, htmlPath = undefined) {
+        // custom code if need
+        return super.activate(context, name, cmdName, htmlPath);
     }
 }
 

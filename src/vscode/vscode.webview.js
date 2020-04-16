@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const BridgeData = require('./vscode.bridge');
 const { Message, ReceivedMessage, Handler } = require('./vscode.message');
+const WebviewApi = require('./vscode.webviewApi');
 
 /**
  * WebView
@@ -11,13 +12,12 @@ const { Message, ReceivedMessage, Handler } = require('./vscode.message');
 class WebView {
     /**
      * Creates an instance of WebView.
-     * @param {string} name
      * @param {Handler} [handler=new Handler()]
      * @memberof WebView
      */
-    constructor(name, handler = new Handler()) {
-        this._name = name;
+    constructor(handler = new Handler()) {
         this._handler = handler;
+        this._handler.addApi(WebviewApi);
         this._panel = undefined;
         this._bridgeData = new BridgeData();
         this._bridgeData.syncHandler = (data) => {
@@ -40,7 +40,7 @@ class WebView {
          */
         this.onDidReceiveMessage = undefined;
     }
-    get name() { return this._name; }
+    get name() { return WebviewApi.name; }
     get handler() { return this._handler; }
     get panel() { return this._panel; }
     get bridgeData() { return this._bridgeData; }
@@ -115,18 +115,23 @@ class WebView {
 
     /**
      * Activate
-     * @param {vscode.ExtensionContext} context
-     * @param {string} cmdName
-     * @param {string} [htmlPath=path.join(__dirname, '..', '..', 'web', 'dist', 'index.html')]
+     * @param {import('vscode').ExtensionContext} context vscode extension context
+     * @param {string} name webview name
+     * @param {string} cmdName cmd name
+     * @param {string} [htmlPath=path.join(context.extensionPath, 'web', 'dist', 'index.html')] html path
      * @returns {this}
      * @memberof WebView
      */
-    activate(context, cmdName, htmlPath = path.join(__dirname, '..', '..', 'web', 'dist', 'index.html')) {
+    activate(context, name, cmdName, htmlPath = undefined) {
+        // activate WebviewApi
+        WebviewApi.activate(context, name, this.bridgeData);
+        htmlPath || (htmlPath = path.join(context.extensionPath, 'web', 'dist', 'index.html'));
         context.subscriptions.push(
             vscode.commands.registerCommand(cmdName, (uri) => {
                 this._uri = uri;
                 this.showPanel(context, htmlPath);
                 this.bridgeData.updateItems({
+                    extensionPath: context.extensionPath,
                     rootPath: vscode.workspace.rootPath,
                     startPath: uri ? uri.path : vscode.workspace.rootPath
                 }, false);
@@ -137,7 +142,8 @@ class WebView {
         );
         return this;
     }
-    deactivate() {}
+    
+    deactivate() { WebviewApi.deactivate(); }
 
     /**
      *Get html from the file path and replace resources protocol to `vscode-resource`

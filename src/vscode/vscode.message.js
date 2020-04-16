@@ -1,5 +1,3 @@
-const utils = require('./vscode.utils');
-
 /**
  * Communication Message from `vscode` to `web`
  * @class Message
@@ -78,44 +76,16 @@ class ReceivedMessage {
 }
 
 /**
- * Executor to received message from `web` to `vscode`
- * @class Executor
- */
-class Executor {
-    /**
-     * Creates an instance of Executor.
-     * @memberof Executor
-     */
-    constructor() {
-            for (const key in utils.Api) {
-                if (utils.Api.hasOwnProperty(key)) {
-                    this[key] = utils.Api[key];
-                }
-            }
-        }
-        /**
-         * Get message handle method by cmd
-         * @param {string} cmd
-         * @returns {({}: any) => Thenable<ReceivedMessageObject>|undefined}
-         * @memberof Executor
-         */
-    get(cmd) {
-        return this[cmd];
-    }
-}
-
-/**
  * Handler to received message from `web` to `vscode`
  * @class Handler
  */
 class Handler {
     /**
      * Creates an instance of Handler.
-     * @param {Executor[]} [executors=[new Executor()]]
      * @memberof Handler
      */
-    constructor(executors = [new Executor()]) {
-        this.executors = executors;
+    constructor() {
+        this._Api = {};
         /**
          * Handler to received message
          * @type {(poster: import('vscode').Webview, message: ReceivedMessageObject) => void}
@@ -124,10 +94,8 @@ class Handler {
             const cmd = message.cmd;
             const args = message.args;
             const func = (_ => {
-                for (var i = 0, len = this.executors.length; i < len; i++) {
-                    if (this.executors[i].get(cmd)) {
-                        return this.executors[i].get(cmd);
-                    }
+                if (this.Api.hasOwnProperty(cmd) && this.Api[cmd]) {
+                    return this.Api[cmd];
                 }
                 return undefined;
             })();
@@ -146,11 +114,26 @@ class Handler {
             }
         };
     }
+    get Api() { return this._Api; }
+    /**
+     * Add api
+     * @param {object} obj
+     * @memberof Handler
+     */
+    addApi(obj) {
+        if (obj instanceof Object) {
+            const Api = obj;
+            for (const key in Api) {
+                if (Api.hasOwnProperty(key)) {
+                    this.Api[key] = Api[key];
+                }
+            }
+        }
+    }
 }
 
 module.exports = {
     Message,
     ReceivedMessage,
-    Executor,
     Handler
 };

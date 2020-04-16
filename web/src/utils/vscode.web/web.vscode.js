@@ -106,7 +106,7 @@ class Vscode {
 
     /**
      * Update bridge data
-     * @type {items: {}}
+     * @type {{data: any} =>  void}
      */
     updateBridgeData = (data) => {
         this.post({ cmd: `updateBridgeData`, args: data, reply: false });
@@ -146,7 +146,7 @@ class Vscode {
 
     /**
      * Get workspace state
-     * @type {() => Promise<data: any>}
+     * @type {() => Promise<{data: any}>}
      */
     getWorkspaceState = () => {
         return this.post({ cmd: `getWorkspaceState` });
@@ -154,7 +154,7 @@ class Vscode {
 
     /**
      * Update workspace state
-     * @type {items: any}
+     * @type {(states: any) => void}
      */
     updateWorkspaceState = (states) => {
         this.post({ cmd: `updateWorkspaceState`, args: states, reply: false });
@@ -170,7 +170,7 @@ class Vscode {
 
     /**
      * Update global state
-     * @type {items: any}
+     * @type {(states: any) => void}
      */
     updateGlobalState = (states) => {
         this.post({ cmd: `updateGlobalState`, args: states, reply: false });

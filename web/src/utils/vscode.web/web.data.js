@@ -122,6 +122,10 @@ class WebviewData {
         this.$globalState.data = this;
         this.$workspaceState.data = this;
         this.$bridgeData.data = this;
+
+        this.extensionPath = '';    // extension path
+        this.rootPath = '';         // current work space path
+        this.startPath = '';        // start path
     }
     get $vscode() { return this.__vscode__; }
     get $globalState() { return this.__globalState__; }

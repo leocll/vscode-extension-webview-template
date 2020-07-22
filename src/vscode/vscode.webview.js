@@ -72,7 +72,7 @@ class WebView {
                 }
             );
             // load html
-            this.panel.webview.html = WebView.getHtml4Path(htmlPath);
+            this.panel.webview.html = this.getHtml4Path(htmlPath);
             this.panel.onDidDispose(() => this.didDispose(), undefined, context.subscriptions);
             // on webview visibility changed or position changed
             this.panel.onDidChangeViewState(state => this.didChangeViewState(state), undefined, context.subscriptions);
@@ -148,12 +148,14 @@ class WebView {
     /**
      *Get html from the file path and replace resources protocol to `vscode-resource`
      *
-     * @static
      * @param {string} htmlPath path of html path 
      * @returns
      * @memberof WebView
      */
-    static getHtml4Path(htmlPath) {
+    getHtml4Path(htmlPath) {
+        // 兼容`v1.38+`
+        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`panel.webview.asWebviewUri(htmlPath)`获得
+        const scheme = this.panel.webview.cspSource ? this.panel.webview.cspSource.split(':')[0] : 'vscode-resource';
         const dirPath = path.dirname(htmlPath);
         let html = fs.readFileSync(htmlPath, 'utf-8');
         html = html.replace(/(href=|src=)(.+?)(\ |>)/g, (m, $1, $2, $3) => {
@@ -161,7 +163,12 @@ class WebView {
             uri = uri.replace('"', '').replace("'", '');
             uri.indexOf('/static') === 0 && (uri = `.${uri}`);
             if (uri.substring(0, 1) == ".") {
-                uri = `${$1}${vscode.Uri.file(path.resolve(dirPath, uri)).with({ scheme: 'vscode-resource' }).toString()}${$3}`;
+                const furi = vscode.Uri.file(path.resolve(dirPath, uri));
+                if (this.panel.webview.asWebviewUri) {
+                    uri = `${$1}${this.panel.webview.asWebviewUri(furi)}${$3}`;
+                } else {
+                    uri = `${$1}${furi.with({ scheme }).toString()}${$3}`;
+                }
                 return uri.replace('%22', '');
             }
             return m;

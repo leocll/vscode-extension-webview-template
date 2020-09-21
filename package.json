@@ -36,8 +36,8 @@
         "test": "node ./node_modules/vscode/bin/test",
         "build": "npm run buildweb && vsce package",
         "buildext": "vsce package",
-        "buildweb": "pushd ./web &> /dev/null && { npm run build;popd &> /dev/null;}",
-        "startweb": "pushd ./web &> /dev/null && { npm run dev;popd &> /dev/null;}"
+        "buildweb": "cd ./web && { npm run build;cd -;}",
+        "startweb": "cd ./web && { npm run dev;cd -;}"
     },
     "devDependencies": {
         "typescript": "^3.3.1",

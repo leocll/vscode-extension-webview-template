@@ -58,7 +58,7 @@ class _WebviewApi {
          */
         this.getStoragePath = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.storagePath);
+                resolve(this.context.storagePath || this.context.storageUri.path);
             });
         };
         /**
@@ -67,16 +67,18 @@ class _WebviewApi {
          */
         this.getGlobalStoragePath = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.globalStoragePath);
+                resolve(this.context.globalStoragePath || this.context.globalStorageUri.path);
             });
         };
         /**
          * Get workspace state
-         * @type {() => Thenable<any>}
+         * @type {() => Thenable<{[x: string]: any}>}
          */
         this.getWorkspaceState = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.workspaceState._value);
+                resolve(this.context.workspaceState._value || this.context.workspaceState.keys().map(key => {
+                    return {[key]: this.context.workspaceState.get(key)}
+                }).reduce((a, b) => Object.assign({}, a, b), {}));
             });
         };
         /**
@@ -100,7 +102,9 @@ class _WebviewApi {
          */
         this.getGlobalState = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.globalState._value);
+                resolve(this.context.globalState._value || this.context.globalState.keys().map(key => {
+                    return {[key]: this.context.globalState.get(key)}
+                }).reduce((a, b) => Object.assign({}, a, b), {}));
             });
         };
         /**
@@ -171,7 +175,7 @@ class _WebviewApi {
         };
         /**
          * Show Input Box
-         * @type {({value, prompt, placeHolder, password, ignoreFocusOut, validateInput}: {value: string, placeHolder?:string, prompt?: string, password?: boolean, ignoreFocusOut?: boolean, validateInput?: string}) => Thenable<string>}
+         * @type {({value, prompt, placeHolder, password, ignoreFocusOut, validateInput}: vscode.InputBoxOptions) => Thenable<string>}
          */
         this.showInputBox = ({ value, prompt = '', placeHolder = '', password = false, ignoreFocusOut = true, validateInput = undefined }) => {
             const options = {};
@@ -339,12 +343,13 @@ class _WebviewApi {
         };
         /**
          * Write file
-         * @type {({path, data, options}: {path: string, data: string|[]|{}, options?: {encoding?: string|undefined, mode?: number|string, flag?: string}|string|undefined}) => Thenable<{error?: string|undefined}>}
+         * @type {({path, data, options}: {path: string, data: string|[]|{}, options?: fs.WriteFileOptions}) => Thenable<{error?: string|undefined}>}
          */
         this.writeFile = ({ path, data, options = undefined }) => {
             return ApiPromise((resolve) => {
-                fs.writeFile(path, data, options, (err) => {
-                    resolve({ error: err ? (err.message || `Failed to write file: ${path}`) : undefined });
+                const d = typeof data === 'string' ? data : JSON.stringify(data);
+                fs.writeFile(path, d, options, (err) => {
+                    resolve({ error: err ? (err.message || err.toString()) : `Failed to write file: ${path}` });
                 });
             });
         };
@@ -354,7 +359,7 @@ class _WebviewApi {
          */
         this.request = ({ url, method = 'POST', data = undefined, headers = { "content-type": "application/json" } }) => {
             return ApiPromise((resolve) => {
-        		const request = require('request');
+                const request = require('request');
                 request({ url, method, headers, body: data }, (error, response, body) => {
                     error && typeof error !== 'string' && (error = error.message || error.toString());
                     resolve({ error, body, statusCode: response.statusCode, statusMessage: response.statusMessage });

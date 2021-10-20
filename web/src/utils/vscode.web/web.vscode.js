@@ -1,7 +1,8 @@
 import MessageCenter from './web.message';
 
 /**
- * @typedef {{cmd: string, args?: any, reply?: boolean, p2p?: boolean, timeout?: number, data?: any}} Message Message
+ * @typedef {import('./web.message').Message} Message - Message
+ * @typedef {{postMessage: (msg: Message) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
  */
 /**
  * Vscode api for web
@@ -9,14 +10,7 @@ import MessageCenter from './web.message';
  */
 class Vscode {
     constructor() {
-        /**
-         * Origin vscodeApi
-         * @type {Webvscode}
-         * @typedef {{postMessage: (msg: Message) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} Webvscode
-         * @property {(msg: Message) => void} postMessage
-         * @property {(key: string, value: any) => void} setState
-         * @property {(key: string) => any} getState
-         */
+        /**@type {VscodeOrigin} */
         this.origin = (_ => {
             try {
                 // @ts-ignore
@@ -106,7 +100,7 @@ class Vscode {
 
     /**
      * Update bridge data
-     * @type {{data: any} =>  void}
+     * @type {{data: any} => void}
      */
     updateBridgeData = (data) => {
         this.post({ cmd: `updateBridgeData`, args: data, reply: false });
@@ -146,7 +140,7 @@ class Vscode {
 
     /**
      * Get workspace state
-     * @type {() => Promise<{data: any}>}
+     * @type {() => Promise<{data: {[name: string]: any}}>}
      */
     getWorkspaceState = () => {
         return this.post({ cmd: `getWorkspaceState` });
@@ -162,7 +156,7 @@ class Vscode {
 
     /**
      * Get global state
-     * @type {() => Promise<{data: any}>}
+     * @type {() => Promise<{data: {[name: string]: any}}>}
      */
     getGlobalState = () => {
         return this.post({ cmd: `getGlobalState` });
@@ -194,7 +188,7 @@ class Vscode {
 
     /**
      * Show message alert
-     * @type {({txt, btns}: {txt: string, btns?: string[]}) => Promise<{data: string}>}
+     * @type {({txt, ouput, btns}: {txt: string, ouput?: boolean, btns?: string[]}) => Promise<{data: string}>}
      */
     showMessage = ({ txt, ouput = false, btns = undefined }) => {
         ouput && this.showTxt2Output({ txt });
@@ -203,7 +197,7 @@ class Vscode {
 
     /**
      * Show error alert
-     * @type {({txt, btns}: {txt: string, btns?: string[]}) => Promise<{data: string}>}
+     * @type {({txt, ouput, btns}: {txt: string|Error, ouput?: boolean, btns?: string[]}) => Promise<{data: string}>}
      */
     showError = ({ txt, ouput = false, btns = undefined }) => {
         if (txt && typeof txt !== 'string') {
@@ -215,7 +209,7 @@ class Vscode {
 
     /**
      * Show warn alert
-     * @type {({txt, btns}: {txt: string, btns?: string[]}) => Promise<{data: string}>}
+     * @type {({txt, ouput, btns}: {txt: string, ouput?: boolean, btns?: string[]}) => Promise<{data: string}>}
      */
     showWarn = ({ txt, ouput = false, btns = undefined }) => {
         ouput && this.showTxt2Output({ txt });

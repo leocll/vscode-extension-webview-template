@@ -1,11 +1,12 @@
 const vscode = require('vscode');
-const path = require('path');
+const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
 const BridgeData = require('./vscode.bridge');
-const { Message, ReceivedMessage, Handler } = require('./vscode.message');
+const { Message, Handler } = require('./vscode.message');
 const WebviewApi = require('./vscode.webviewApi');
 
 /**
+ * @typedef {import('./vscode.message').ReceivedMessageObject} ReceivedMessageObject
  * WebView
  * @class WebView
  */
@@ -21,7 +22,7 @@ class WebView {
         this._panel = undefined;
         this._bridgeData = new BridgeData();
         this._bridgeData.syncHandler = (data) => {
-            this.panel.webview.postMessage(Message.syncBridgeData(data));
+            this.panel && this.panel.webview.postMessage(Message.syncBridgeData(data));
         };
         /**
          * @type {(uri: vscode.Uri) => void}
@@ -36,7 +37,7 @@ class WebView {
          */
         this.onDidChangeViewState = undefined;
         /**
-         * @type {(message: ReceivedMessage) => void}
+         * @type {(message: ReceivedMessageObject) => void}
          */
         this.onDidReceiveMessage = undefined;
     }
@@ -82,7 +83,7 @@ class WebView {
 
     /**
      * On did receive message
-     * @param {ReceivedMessage} message
+     * @param {ReceivedMessageObject} message
      * @memberof WebView
      */
     didReceiveMessage(message) {

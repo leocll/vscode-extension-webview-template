@@ -64,16 +64,7 @@ class Message {
 /**
  * Received Message from `web` to `vscode`
  * @typedef {{cmd: string, args: {}, reply: boolean, data?: any}} ReceivedMessageObject
- * @class ReceivedMessage
  */
-class ReceivedMessage {
-    constructor() {
-        this.cmd = '';
-        this.args = {};
-        this.reply = true;
-        this.data = undefined;
-    }
-}
 
 /**
  * Handler to received message from `web` to `vscode`
@@ -103,10 +94,15 @@ class Handler {
                 const p = func(args);
                 if (message.reply && poster) {
                     if (p) {
-                        p.then(data => {
-                            message.data = data;
+                        if (typeof p.then === 'function') {
+                            p.then(data => {
+                                message.data = data;
+                                poster.postMessage(message);
+                            });
+                        } else {
+                            message.data = p;
                             poster.postMessage(message);
-                        });
+                        }
                     } else {
                         poster.postMessage(message);
                     }
@@ -134,6 +130,5 @@ class Handler {
 
 module.exports = {
     Message,
-    ReceivedMessage,
     Handler
 };

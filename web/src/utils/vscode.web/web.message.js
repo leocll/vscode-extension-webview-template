@@ -1,9 +1,11 @@
 /**
- * @typedef {{cmd: string, args?: any, reply?: boolean, p2p?: boolean, timeout?: number, data?: any}} Message Message
+ * @typedef {{cmd: string, args?: {[name: string]: any}, reply?: boolean, p2p?: boolean, timeout?: number}} CMD - Post cmd
+ * @typedef {CMD & {data: any}} Message - Message
+ * @typedef {import('./web.vscode').VscodeOrigin} VscodeOrigin - Origin vscodeApi
  */
 /**
  * Message center
- * @param {*} poster
+ * @param {VscodeOrigin} poster
  */
 function MessageCenter(poster) {
     this.index = 0;
@@ -21,7 +23,7 @@ function MessageCenter(poster) {
 
     /**
      * Post message
-     * @type {({cmd, args, reply, p2p, timeout}: Message, ext?: any) => Promise<Message>|undefined}
+     * @type {({cmd, args, reply, p2p, timeout}: CMD, ext?: {[name: string]: any}) => Promise<Message>|undefined}
      */
     this.post = ({ cmd, args = undefined, reply = true, p2p = true, timeout = 0 }, ext = {}) => {
         ext.cmd = cmd;
@@ -31,19 +33,41 @@ function MessageCenter(poster) {
             this.index += 1;
             ext.index = this.index; // 1 on 1
         }
-        poster && poster.postMessage && poster.postMessage(ext);
         if (reply) {
             return new Promise((resolve, _) => {
                 const f = (message) => {
                     resolve(message);
                 };
-                p2p && (f.index = this.index);
-                this.on(cmd, f);
-                timeout > 0 && setTimeout(() => {
-                    f({ error: 'Operate timeout.' });
-                    this.off(cmd, f);
-                }, timeout);
+                try {
+                    const ff = () => {
+                        p2p && (f.index = this.index);
+                        this.on(cmd, f);
+                        timeout > 0 && setTimeout(() => {
+                            ext.data = { status: 0, description: 'Operate timeout.' }
+                            f(ext);
+                            this.off(cmd, f);
+                        }, timeout);
+                    };
+                    const promise = poster && poster.postMessage && poster.postMessage(ext);
+                    if (promise && promise.then) {
+                        promise.then((err) => {
+                            if (err) {
+                                ext.data = { status: 0, description: err ? (err.message || err.toString()) : 'Unknown error.' };
+                                f(ext);
+                            } else {
+                                ff();
+                            }
+                        });
+                    } else {
+                        ff();
+                    }
+                } catch (e) {
+                    ext.data = { status: 0, description: e ? (e.message || e.toString()) : 'Unknown error.' }
+                    f(ext);
+                }
             });
+        } else {
+            poster && poster.postMessage && poster.postMessage(ext);
         }
     };
 

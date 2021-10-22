@@ -45,11 +45,11 @@ class _WebviewApi {
         };
         /**
          * Get workspace path
-         * @type {() => Thenable<string>}
+         * @type {() => Thenable<string[]>}
          */
-        this.getWorkspacePath = () => {
+        this.getWorkspaceFolderPaths = () => {
             return ApiPromise((resolve) => {
-                resolve(vscode.workspace.rootPath);
+                resolve(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.map(p => p.uri.path) : vscode.workspace.rootPath ? [vscode.workspace.rootPath] : []);
             });
         };
         /**
@@ -77,7 +77,7 @@ class _WebviewApi {
         this.getWorkspaceState = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.workspaceState._value || this.context.workspaceState.keys().map(key => {
-                    return {[key]: this.context.workspaceState.get(key)}
+                    return {[key]: this.context.workspaceState.get(key)};
                 }).reduce((a, b) => Object.assign({}, a, b), {}));
             });
         };

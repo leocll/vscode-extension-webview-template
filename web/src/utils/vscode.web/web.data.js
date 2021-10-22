@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable spaced-comment */
 /**
  * @typedef {import('./web.vscode').default} Vscode Vscode hook in web
  */
@@ -123,9 +125,12 @@ class WebviewData {
         this.$workspaceState.data = this;
         this.$bridgeData.data = this;
 
-        this.extensionPath = '';    // extension path
-        this.rootPath = '';         // current work space path
-        this.startPath = '';        // start path
+        /**@type {string|undefined} */
+        this.extensionPath = undefined; // extension folder path
+        /**@type {string[]} */
+        this.workspaceFolderPaths = []; // current workspace folder path
+        /**@type {string|undefined} */
+        this.startPath = undefined;     // start path
     }
     get $vscode() { return this.__vscode__; }
     get $globalState() { return this.__globalState__; }

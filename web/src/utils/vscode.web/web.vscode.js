@@ -100,7 +100,7 @@ class Vscode {
 
     /**
      * Update bridge data
-     * @type {{data: any} => void}
+     * @type {(data: any) => void}
      */
     updateBridgeData = (data) => {
         this.post({ cmd: `updateBridgeData`, args: data, reply: false });
@@ -115,11 +115,11 @@ class Vscode {
     }
 
     /**
-     * Get workspace path
-     * @type {() => Promise<{data: string}>}
+     * Get workspace folder paths
+     * @type {() => Promise<{data: string[]}>}
      */
-    getWorkspacePath = () => {
-        return this.post({ cmd: `getWorkspacePath` });
+    getWorkspaceFolderPaths = () => {
+        return this.post({ cmd: `getWorkspaceFolderPaths` });
     }
 
     /**

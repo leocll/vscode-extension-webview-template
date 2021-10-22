@@ -133,8 +133,8 @@ class WebView {
                 this.showPanel(context, htmlPath);
                 this.bridgeData.updateItems({
                     extensionPath: context.extensionPath,
-                    rootPath: vscode.workspace.rootPath,
-                    startPath: uri ? uri.path : vscode.workspace.rootPath
+                    workspaceFolderPaths: vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.map(p => p.uri.path) : vscode.workspace.rootPath ? [vscode.workspace.rootPath] : [],
+                    startPath: uri && uri.path
                 }, false);
                 this.bridgeData.syncAll();
                 this.onDidPose && this.onDidPose(uri);

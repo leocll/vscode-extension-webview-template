@@ -21,7 +21,8 @@
     ],
     "main": "./src/extension.js",
     "contributes": {
-        "commands": [{
+        "commands": [
+            {
                 "command": "example.webview",
                 "title": "Example: WebView"
             },
@@ -40,10 +41,10 @@
         "startweb": "cd ./web && { npm run dev;cd -;}"
     },
     "devDependencies": {
-        "typescript": "^3.3.1",
-        "vscode": "^1.1.28",
-        "eslint": "^5.13.0",
+        "@types/mocha": "^2.2.42",
         "@types/node": "^10.12.21",
-        "@types/mocha": "^2.2.42"
+        "@types/vscode": "^1.30.0",
+        "eslint": "^5.13.0",
+        "typescript": "^3.3.1"
     }
 }

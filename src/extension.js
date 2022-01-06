@@ -8,7 +8,6 @@ function activate(context) {
     console.log(`Extension(${example.name}) is activated.`);
     example.activate(context);
 }
-exports.activate = activate;
 
 /**
  * Called when the extension is deactivated

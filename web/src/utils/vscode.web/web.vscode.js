@@ -10,7 +10,7 @@ import MessageCenter from './web.message';
  */
 class Vscode {
     constructor() {
-        /**@type {VscodeOrigin} */
+        /** @type {VscodeOrigin} */
         this.origin = (_ => {
             try {
                 // @ts-ignore

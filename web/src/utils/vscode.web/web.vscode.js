@@ -3,6 +3,9 @@ import MessageCenter from './web.message';
 /**
  * @typedef {import('./web.message').Message} Message - Message
  * @typedef {{postMessage: (msg: Message) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
+ * 
+ * @typedef {import('../../../../src/vscode/vscode.webviewApi').WorkspaceFolder} WorkspaceFolder
+ * @typedef {import('../../../../src/vscode/vscode.webviewApi').AddWorkspaceFolder} AddWorkspaceFolder
  */
 /**
  * Vscode api for web
@@ -115,11 +118,38 @@ class Vscode {
     }
 
     /**
-     * Get workspace folder paths
-     * @type {() => Promise<{data: string[]}>}
+     * Get workspace file
+     * @type {() => Promise<{data?: string}>}
      */
-    getWorkspaceFolderPaths = () => {
-        return this.post({ cmd: `getWorkspaceFolderPaths` });
+    getWorkspaceFile = () => {
+        return this.post({ cmd: `getWorkspaceFile` });
+    }
+
+    /**
+     * Get workspace folders
+     * @type {() => Promise<{data: WorkspaceFolder[]}>}
+     */
+    getWorkspaceFolders = () => {
+        return this.post({ cmd: `getWorkspaceFolders` });
+    }
+
+    /**
+     * On recrived message of workspace folders changed
+     * @param {(msg: {cmd: 'onDidChangeWorkspaceFolders'}) => void} callBack
+     * @param {number} times
+     * @memberof Vscode
+     */
+    onDidChangeWorkspaceFolders = (callBack, times = 1) => {
+        this.on(`onDidChangeWorkspaceFolders`, callBack, times);
+        return this;
+    }
+
+    /**
+     * Update workspace folders
+     * @type {(start: number, deleteCount: number, add?: AddWorkspaceFolder[]) => Promise<{data: Boolean}>}
+     */
+    updateWorkspaceFolders = (start, deleteCount, add = undefined) => {
+        return this.post({ cmd: `updateWorkspaceFolders`, args: { start, deleteCount, add } });
     }
 
     /**
@@ -180,7 +210,8 @@ class Vscode {
 
     /**
      * Get current platform
-     * @type {() => Promise<{data: 'aix'|'android'|'darwin'|'freebsd'|'linux'|'openbsd'|'sunos'|'win32'|'cygwin'|'netbsd'}>}
+     * @typedef {import('../../../../src/vscode/vscode.utils').Platform} Platform
+     * @type {() => Promise<{data: Platform}>}
      */
     getPlatform = () => {
         return this.post({ cmd: `getPlatform` });
@@ -238,22 +269,19 @@ class Vscode {
 
     /**
      * Show file
-     * @type {({filePath, viewColumn, preserveFocus, preview}: {filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean}) => void}
+     * @type {({filePath, viewColumn, preserveFocus, preview, revealRange, revealType}: {filePath: string, viewColumn?: import('vscode').ViewColumn, preserveFocus?: boolean, preview?: boolean, revealRange?: {startLine?: Number, endLine?: Number}, revealType?: import('vscode').TextEditorRevealType}) => void}
      */
-    showTextDocument = ({ filePath, viewColumn = 1, preserveFocus = false, preview = false }) => {
-        const args = { filePath };
-        viewColumn && (args.viewColumn = viewColumn);
-        preserveFocus && (args.preserveFocus = preserveFocus);
-        preview && (args.preview = preview);
+    showTextDocument = ({ filePath, viewColumn = 1, preserveFocus = false, preview = false, revealRange = undefined, revealType = 0 }) => {
+        const args = { filePath, viewColumn, preserveFocus, preview, revealRange, revealType };
         this.post({ cmd: `showTextDocument`, args, reply: false });
     }
 
     /**
      * Show txt to output
-     * @type {({txt, preserveFocus, line}: {txt: string, preserveFocus?: boolean, line?: boolean}) => void}
+     * @type {({txt, preserveFocus, line}: {txt: string, preserveFocus?: boolean, line?: boolean, show?: boolean}) => void}
      */
-    showTxt2Output = ({ txt, preserveFocus = false }) => {
-        this.post({ cmd: `showTxt2Output`, args: { txt, preserveFocus }, reply: false });
+    showTxt2Output = ({ txt, preserveFocus = true, line = true, show = true }) => {
+        this.post({ cmd: `showTxt2Output`, args: { txt, preserveFocus, line, show }, reply: false });
     }
 
     /**

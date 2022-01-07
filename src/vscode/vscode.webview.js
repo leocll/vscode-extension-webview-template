@@ -1,11 +1,13 @@
 const vscode = require('vscode');
-const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
+const os = require('os');
+const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
 const BridgeData = require('./vscode.bridge');
 const { Message, Handler } = require('./vscode.message');
 const WebviewApi = require('./vscode.webviewApi');
 
 /**
+ * @typedef {import('./vscode.message').PostMessageObject} PostMessageObject
  * @typedef {import('./vscode.message').ReceivedMessageObject} ReceivedMessageObject
  * WebView
  * @class WebView
@@ -22,7 +24,7 @@ class WebView {
         this._panel = undefined;
         this._bridgeData = new BridgeData();
         this._bridgeData.syncHandler = (data) => {
-            this.panel && this.panel.webview.postMessage(Message.syncBridgeData(data));
+            this.postMessage(Message.syncBridgeData(data));
         };
         /**
          * @type {(uri: vscode.Uri) => void}
@@ -82,6 +84,15 @@ class WebView {
     }
 
     /**
+     * Post message
+     * @param {PostMessageObject} message
+     * @memberof WebView
+     */
+    postMessage(message) {
+        this.panel && this.panel.webview.postMessage(message);
+    }
+
+    /**
      * On did receive message
      * @param {ReceivedMessageObject} message
      * @memberof WebView
@@ -100,7 +111,7 @@ class WebView {
     didChangeViewState(state) {
         // const p = state.panel;
         this.onDidChangeViewState && this.onDidChangeViewState(state);
-        // this.panel.webview.postMessage(Message.webviewDidChangeViewState(undefined));
+        // this.postMessage(Message.webviewDidChangeViewState(undefined));
         console.log(`Webview(${this.name}) did changeView state.`);
     }
 
@@ -116,7 +127,7 @@ class WebView {
 
     /**
      * Activate
-     * @param {import('vscode').ExtensionContext} context vscode extension context
+     * @param {vscode.ExtensionContext} context vscode extension context
      * @param {string} name webview name
      * @param {string} cmdName cmd name
      * @param {string} [htmlPath=path.join(context.extensionPath, 'web', 'dist', 'index.html')] html path
@@ -138,7 +149,7 @@ class WebView {
                 }, false);
                 this.bridgeData.syncAll();
                 this.onDidPose && this.onDidPose(uri);
-                this.panel.webview.postMessage(Message.webviewDidPose(undefined));
+                this.postMessage(Message.webviewDidPose(undefined));
             })
         );
         return this;

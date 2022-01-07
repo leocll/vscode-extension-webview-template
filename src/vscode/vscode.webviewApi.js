@@ -1,5 +1,6 @@
 const fs = require('fs');
 const os = require('os');
+const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const vscode = require('vscode');
 
 const ApiPromise = (callBack) => {
@@ -7,7 +8,20 @@ const ApiPromise = (callBack) => {
         callBack(resolve, reject);
     });
 };
-const isWin = os.platform() === 'win32';
+
+/**
+ * @typedef {{index: number, name: string, folder: string}} WorkspaceFolder
+ * @typedef {{name?: string, uri: string}} AddWorkspaceFolder
+ * @typedef {NodeJS.Platform} Platform
+ */
+/**
+ * @returns {WorkspaceFolder[]}
+ */
+function getSyncWorkspaceFolders() {
+    return vscode.workspace.workspaceFolders.map(wf => {
+        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+    });
+}
 
 /**
  * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
@@ -44,12 +58,30 @@ class _WebviewApi {
             });
         };
         /**
-         * Get workspace path
-         * @type {() => Thenable<string[]>}
+         * Get workspace file
+         * @type {() => Thenable<string|undefined>}
          */
-        this.getWorkspaceFolderPaths = () => {
+        this.getWorkspaceFile = () => {
             return ApiPromise((resolve) => {
-                resolve(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.map(p => p.uri.path) : vscode.workspace.rootPath ? [vscode.workspace.rootPath] : []);
+                resolve(vscode.workspace.workspaceFile && vscode.workspace.workspaceFile.fsPath);
+            });
+        };
+        /**
+         * Get workspace folders
+         * @type {() => Thenable<WorkspaceFolder[]>}
+         */
+        this.getWorkspaceFolders = () => {
+            return ApiPromise((resolve) => {
+                resolve(getSyncWorkspaceFolders());
+            });
+        };
+        /**
+         * Update workspace folders
+         * @type {({start, deleteCount, add}: {start: number, deleteCount: number, add?: AddWorkspaceFolder[]}) => Thenable<Boolean>} 
+         */
+        this.updateWorkspaceFolders = ({ start, deleteCount, add = undefined}) => {
+            return ApiPromise((resolve) => {
+                resolve(vscode.workspace.updateWorkspaceFolders(start, deleteCount, ...(add || []).map(wf => { return {name: wf.name, uri: vscode.Uri.file(wf.uri)}; })));
             });
         };
         /**
@@ -58,7 +90,7 @@ class _WebviewApi {
          */
         this.getStoragePath = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.storagePath || this.context.storageUri.path);
+                resolve(this.context.storagePath || this.context.storageUri.fsPath);
             });
         };
         /**
@@ -67,7 +99,7 @@ class _WebviewApi {
          */
         this.getGlobalStoragePath = () => {
             return ApiPromise((resolve) => {
-                resolve(this.context.globalStoragePath || this.context.globalStorageUri.path);
+                resolve(this.context.globalStoragePath || this.context.globalStorageUri.fsPath);
             });
         };
         /**
@@ -83,7 +115,7 @@ class _WebviewApi {
         };
         /**
          * Update workspace state
-         * @type {(items: any) => Thenable<undefined>}
+         * @type {(states: any) => Thenable<undefined>}
          */
         this.updateWorkspaceState = (states) => {
             return ApiPromise((resolve) => {
@@ -103,13 +135,13 @@ class _WebviewApi {
         this.getGlobalState = () => {
             return ApiPromise((resolve) => {
                 resolve(this.context.globalState._value || this.context.globalState.keys().map(key => {
-                    return {[key]: this.context.globalState.get(key)}
+                    return {[key]: this.context.globalState.get(key)};
                 }).reduce((a, b) => Object.assign({}, a, b), {}));
             });
         };
         /**
          * Update global state
-         * @type {(items: any) => Thenable<undefined>}
+         * @type {(states: any) => Thenable<void>}
          */
         this.updateGlobalState = (states) => {
             return ApiPromise((resolve) => {
@@ -129,9 +161,7 @@ class _WebviewApi {
         this.findFileInWorkspace = ({ include, exclude = undefined }) => {
             return ApiPromise((resolve) => {
                 vscode.workspace.findFiles(include, exclude).then((uris) => {
-                    resolve(uris.map((uri) => {
-                        return (isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path;
-                    }));
+                    resolve(uris.map((uri) => uri.fsPath));
                 }, () => {
                     resolve(undefined);
                 });
@@ -139,7 +169,7 @@ class _WebviewApi {
         };
         /**
          * Get current platform
-         * @type {() => Thenable<'aix'|'android'|'darwin'|'freebsd'|'linux'|'openbsd'|'sunos'|'win32'|'cygwin'|'netbsd'>}
+         * @type {() => Thenable<Platform>}
          */
         this.getPlatform = () => {
             return ApiPromise((resolve) => {
@@ -212,9 +242,7 @@ class _WebviewApi {
             openLabel && (options.openLabel = openLabel);
             return ApiPromise((resolve) => {
                 vscode.window.showOpenDialog(options).then(uris => {
-                    resolve(uris && uris.map(uri => {
-                        return (isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path;
-                    }));
+                    resolve(uris && uris.map(uri => uri.fsPath));
                 });
             });
         };
@@ -230,7 +258,7 @@ class _WebviewApi {
             saveLabel && (options.openLabel = saveLabel);
             return ApiPromise((resolve) => {
                 vscode.window.showSaveDialog(options).then(uri => {
-                    resolve(uri ? ((isWin && uri.path.startsWith('/')) ? uri.path.slice(1) : uri.path) : undefined);
+                    resolve(uri ? uri.fsPath : undefined);
                 });
             });
         };
@@ -249,24 +277,51 @@ class _WebviewApi {
         };
         /**
          * Show file
-         * @type {({filePath, viewColumn, preserveFocus, preview}: {filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean}) => void}
+         * @type {({filePath, viewColumn, preserveFocus, preview, revealRange, revealType}: {filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean, revealRange?: {startLine?: Number, endLine?: Number}, revealType?: vscode.TextEditorRevealType}) => void}
          */
-        this.showTextDocument = ({ filePath, viewColumn = vscode.ViewColumn.One, preserveFocus = false, preview = false }) => {
-            vscode.window.visibleTextEditors.find(te => {
-                return te.document.uri.path === filePath;
-            }) || vscode.window.showTextDocument(vscode.Uri.file(filePath), { viewColumn, preserveFocus, preview });
+        this.showTextDocument = ({ filePath, viewColumn = vscode.ViewColumn.One, preserveFocus = false, preview = false, revealRange = undefined, revealType = vscode.TextEditorRevealType.Default }) => {
+            const textEdit = vscode.window.visibleTextEditors.find(te => {
+                return te.document.uri.fsPath === filePath;
+            });
+            /**@type {Thenable<vscode.TextEditor>} */
+            let promise = undefined;
+            if (textEdit) {
+                promise = vscode.window.showTextDocument(textEdit.document, textEdit.viewColumn);
+            } else {
+                promise = vscode.window.showTextDocument(vscode.Uri.file(filePath), { viewColumn, preserveFocus, preview });
+            }
+            promise.then((textEdit) => {
+                const lineCount = textEdit.document.lineCount;
+                if (lineCount > 0 && revealRange && (typeof revealRange.startLine === 'number' || typeof revealRange.endLine === 'number')) {
+                    let startLine = typeof revealRange.startLine === 'number' ? revealRange.startLine : 1;
+                    let endLine = typeof revealRange.endLine === 'number' ? revealRange.endLine : lineCount;
+                    startLine = 0 < startLine && startLine <= lineCount ? startLine : 1;
+                    endLine = 0 < endLine && endLine < lineCount ? endLine : lineCount;
+                    const startTextLine = textEdit.document.lineAt(startLine - 1);
+                    const endTextLine = textEdit.document.lineAt(endLine - 1);
+                    const range = new vscode.Range(startTextLine.range.start, endTextLine.range.end);
+                    textEdit.revealRange(range, revealType);
+                }
+            }, (reason) => {
+                reason = reason || `cannot open '${filePath}'`;
+                reason = typeof reason === 'string' ? reason : (reason.message || reason.toString());
+                // vscode.window.showErrorMessage(reason);
+                this.showError({txt: reason});
+            });
         };
         /**
          * Show txt to output
-         * @type {({txt, preserveFocus, line}: {txt: string, preserveFocus?: boolean, line?: boolean}) => void}
+         * @type {({txt, preserveFocus, line}: {txt: string, preserveFocus?: boolean, line?: boolean, show?: boolean}) => void}
          */
-        this.showTxt2Output = ({ txt, preserveFocus = false, line = true }) => {
+        this.showTxt2Output = ({ txt, preserveFocus = true, line = true, show = true }) => {
             if (line) {
                 this.output.appendLine(txt);
             } else {
                 this.output.append(txt);
             }
-            // this.output.show(preserveFocus);
+            if (show) {
+                this.output.show(preserveFocus);
+            }
         };
         /**
          * Send cmd to terminal
@@ -283,7 +338,7 @@ class _WebviewApi {
          */
         this.exists4Path = ({ path }) => {
             return ApiPromise((resolve) => {
-                fs.exists(path, resolve);
+                resolve(fs.existsSync(path));
             });
         };
         /**
@@ -349,7 +404,7 @@ class _WebviewApi {
             return ApiPromise((resolve) => {
                 const d = typeof data === 'string' ? data : JSON.stringify(data);
                 fs.writeFile(path, d, options, (err) => {
-                    resolve({ error: err ? (err.message || err.toString()) : `Failed to write file: ${path}` });
+                    resolve({ error: err ? (err.message || err.toString()) : undefined });
                 });
             });
         };

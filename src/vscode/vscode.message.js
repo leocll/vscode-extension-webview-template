@@ -1,7 +1,7 @@
 /**
  * Communication Message from `vscode` to `web`
  * @class Message
- * @typedef {{cmd: string, data: any}} PostMessageObject
+ * @typedef {{cmd: string, data?: any}} PostMessageObject
  */
 class Message {
     /**

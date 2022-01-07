@@ -35,7 +35,7 @@ class WebView {
          */
         this.onDidDispose = undefined;
         /**
-         * @type {(state: any) => void}
+         * @type {(event: vscode.WebviewPanelOnDidChangeViewStateEvent) => void}
          */
         this.onDidChangeViewState = undefined;
         /**

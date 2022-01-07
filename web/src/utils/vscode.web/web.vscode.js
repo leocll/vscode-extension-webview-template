@@ -61,7 +61,6 @@ class Vscode {
         this.post = this.messageCenter.post;
         this.on = this.messageCenter.on;
         this.off = this.messageCenter.off;
-        this.webviewData = undefined;
         // @ts-ignore
         window && window.addEventListener && window.addEventListener('message', this.received);
     }

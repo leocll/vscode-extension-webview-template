@@ -125,12 +125,18 @@ class WebviewData {
         this.$workspaceState.data = this;
         this.$bridgeData.data = this;
 
-        /**@type {string|undefined} */
-        this.extensionPath = undefined; // extension folder path
-        /**@type {string[]} */
-        this.workspaceFolderPaths = []; // current workspace folder path
-        /**@type {string|undefined} */
-        this.startPath = undefined;     // start path
+        /**@type {NodeJS.Platform} - current os platform*/
+        this.platform = 'darwin';
+        /**@type {'/' | '\\'} - current path sep */
+        this.pathSep = '/';
+        /**@type {string} - current extension folder path */
+        this.extensionPath = '';
+        /**@type {string} - current workspace file */
+        this.workspaceFile = '';
+        /**@type {import('./web.vscode').WorkspaceFolder[]} - current workspace folders */
+        this.workspaceFolders = [];
+        /**@type {string} - start path */
+        this.startPath = '';
     }
     get $vscode() { return this.__vscode__; }
     get $globalState() { return this.__globalState__; }

@@ -143,13 +143,29 @@ class WebView {
                 this._uri = uri;
                 this.showPanel(context, htmlPath);
                 this.bridgeData.updateItems({
+                    platform: os.platform(),
+                    pathSep: path.sep,
                     extensionPath: context.extensionPath,
-                    workspaceFolderPaths: vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.map(p => p.uri.path) : vscode.workspace.rootPath ? [vscode.workspace.rootPath] : [],
-                    startPath: uri && uri.path
+                    workspaceFile: vscode.workspace.workspaceFile ? vscode.workspace.workspaceFile.fsPath : '',
+                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+                    }),
+                    startPath: uri ? uri.fsPath : '',
                 }, false);
                 this.bridgeData.syncAll();
                 this.onDidPose && this.onDidPose(uri);
                 this.postMessage(Message.webviewDidPose(undefined));
+            }),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => {
+                this.bridgeData.updateItems({
+                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+                    }),
+                }, true);
+                this.postMessage({
+                    cmd: `onDidChangeWorkspaceFolders`,
+                    data: undefined
+                });
             })
         );
         return this;

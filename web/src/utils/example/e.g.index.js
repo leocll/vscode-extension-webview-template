@@ -1,21 +1,24 @@
 import EGVscode from './e.g.vscode';
 import { EGData } from './e.g.data';
 
-// vscode
-const vscode = new EGVscode();
-// webviewData
-const webviewData = new EGData(vscode);
-vscode.webviewData = webviewData;
-// activate, get data
-webviewData.$activate();
+// $vscode
+const $vscode = new EGVscode();
+// $data
+const $data = new EGData();
 
-window.vscode = vscode;
-window.webviewData = webviewData;
+window.$vscode = $vscode;
+window.$data = $data;
 
 const example = {
+    $vscode,
+    $data,
     activate: () => {
-        webviewData.$activate();
+        $data.$activate($vscode);
     }
 };
 
 export default example;
+export {
+    $vscode,
+    $data,
+};

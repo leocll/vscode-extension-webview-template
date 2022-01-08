@@ -2,7 +2,9 @@ const vscode = require('vscode');
 const os = require('os');
 const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
-const { WebViewMessageManager } = require('./vscode.message');
+const BridgeData = require('./vscode.bridge');
+const { Message, Handler } = require('./vscode.message');
+const WebviewApi = require('./vscode.webviewApi');
 
 /**
  * @typedef {import('./vscode.message').PostMessageObject} PostMessageObject
@@ -13,31 +15,39 @@ const { WebViewMessageManager } = require('./vscode.message');
 class WebView {
     /**
      * Creates an instance of WebView.
+     * @param {Handler} [handler=new Handler()]
      * @memberof WebView
      */
-    constructor() {
-        this._messageManager = new WebViewMessageManager({
-            postMessage: (message) => this.postMessage(message)
-        });
-        /**@type {string} - webview name */
-        this._name = undefined;
-        /**@type {vscode.WebviewPanel} */
+    constructor(handler = new Handler()) {
+        this._handler = handler;
+        this._handler.addApi(WebviewApi);
         this._panel = undefined;
-        /**@type {vscode.Uri} */
-        this._startUri = undefined;
-        /**@type {(uri: vscode.Uri) => void} */
-        this._onDidPose = this._messageManager.postMessage_onDidPose;
-        /**@type {() => void} */
-        this._onDidDispose = this._messageManager.postMessage_onDidDispose;
-        /**@type {(event: vscode.WebviewPanelOnDidChangeViewStateEvent) => void} */
-        this._onDidChangeViewState = this._messageManager.postMessage_onDidChangeViewState;
-        /**@type {(message: ReceivedMessageObject) => void} */
-        this._onDidReceiveMessage = this._messageManager.postMessage_onDidReceiveMessage;
+        this._bridgeData = new BridgeData();
+        this._bridgeData.syncHandler = (data) => {
+            this.postMessage(Message.syncBridgeData(data));
+        };
+        /**
+         * @type {(uri: vscode.Uri) => void}
+         */
+        this.onDidPose = undefined;
+        /**
+         * @type {() => void}
+         */
+        this.onDidDispose = undefined;
+        /**
+         * @type {(event: vscode.WebviewPanelOnDidChangeViewStateEvent) => void}
+         */
+        this.onDidChangeViewState = undefined;
+        /**
+         * @type {(message: ReceivedMessageObject) => void}
+         */
+        this.onDidReceiveMessage = undefined;
     }
-    get messageManager() { return this._messageManager; }
-    get name() { return this._name; }
+    get name() { return WebviewApi.name; }
+    get handler() { return this._handler; }
     get panel() { return this._panel; }
-    get startUri() { return this._startUri; }
+    get bridgeData() { return this._bridgeData; }
+    get uri() { return this._uri; }
 
     /**
      * Show panel
@@ -88,7 +98,8 @@ class WebView {
      * @memberof WebView
      */
     didReceiveMessage(message) {
-        this._onDidReceiveMessage && this._onDidReceiveMessage(message);
+        this.handler && this.handler.received && this.handler.received(this.panel.webview, message);
+        this.onDidReceiveMessage && this.onDidReceiveMessage(message);
         console.log(`Extension(${this.name}) received message: ${message.cmd}`);
     }
 
@@ -99,7 +110,7 @@ class WebView {
      */
     didChangeViewState(state) {
         // const p = state.panel;
-        this._onDidChangeViewState && this._onDidChangeViewState(state);
+        this.onDidChangeViewState && this.onDidChangeViewState(state);
         // this.postMessage(Message.webviewDidChangeViewState(undefined));
         console.log(`Webview(${this.name}) did changeView state.`);
     }
@@ -110,7 +121,7 @@ class WebView {
      */
     didDispose() {
         this._panel = undefined;
-        this._onDidDispose && this._onDidDispose();
+        this.onDidDispose && this.onDidDispose();
         console.log(`Webview(${this.name}) did dispose.`);
     }
 
@@ -124,25 +135,46 @@ class WebView {
      * @memberof WebView
      */
     activate(context, name, cmdName, htmlPath = undefined) {
-        this._name = name;
+        // activate WebviewApi
+        WebviewApi.activate(context, name, this.bridgeData);
         htmlPath || (htmlPath = path.join(context.extensionPath, 'web', 'dist', 'index.html'));
         context.subscriptions.push(
             vscode.commands.registerCommand(cmdName, (uri) => {
-                this._startUri = uri;
+                this._uri = uri;
                 this.showPanel(context, htmlPath);
-                this._onDidPose && this._onDidPose(uri);
+                this.bridgeData.updateItems({
+                    platform: os.platform(),
+                    pathSep: path.sep,
+                    extensionPath: context.extensionPath,
+                    workspaceFile: vscode.workspace.workspaceFile ? vscode.workspace.workspaceFile.fsPath : '',
+                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+                    }),
+                    startPath: uri ? uri.fsPath : '',
+                }, false);
+                this.bridgeData.syncAll();
+                this.onDidPose && this.onDidPose(uri);
+                this.postMessage(Message.webviewDidPose(undefined));
+            }),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => {
+                this.bridgeData.updateItems({
+                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+                    }),
+                }, true);
+                this.postMessage({
+                    cmd: `onDidChangeWorkspaceFolders`,
+                    data: undefined
+                });
             })
         );
-        this.messageManager.activate(context, this);
         return this;
     }
-
-    deactivate() {
-        this.messageManager.deactivate();
-    }
+    
+    deactivate() { WebviewApi.deactivate(); }
 
     /**
-     * Get html from the file path and replace resources protocol to `vscode-resource`
+     *Get html from the file path and replace resources protocol to `vscode-resource`
      *
      * @param {string} htmlPath path of html path 
      * @returns

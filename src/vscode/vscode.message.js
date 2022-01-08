@@ -1,134 +1,195 @@
+const { EventEmitter } = require('events');
+
 /**
- * Communication Message from `vscode` to `web`
- * @class Message
- * @typedef {{cmd: string, data?: any}} PostMessageObject
+ * @typedef {{cmd: string, data?: any}} PostMessageObject - Communication Message from `vscode` to `web`
+ * @typedef {{cmd: string, args: any, reply: boolean, data?: any}} ReceivedMessageObject - Received Message from `web` to `vscode`
+ * @typedef {(message: PostMessageObject) => void} PostMessageHandler - Post message handler
+ * @typedef {(result: any) => void} ResultHandler - Result handler
+ * @typedef {(resultHandler: ResultHandler, message: ReceivedMessageObject) => void} MessageResultHandler - Message result handler
  */
-class Message {
-    /**
-     * Create a new message
-     * @static
-     * @param {string} cmd
-     * @param {any} data
-     * @returns {PostMessageObject}
-     * @memberof Message
-     */
-    static create(cmd, data) {
-        return { cmd, data };
+class WebViewMessageCenter {
+    constructor() {
+        /**@type {PostMessageHandler} */
+        this.postMessage = () => {};
     }
-
     /**
-     * Create a new message of `webviewDidPose`
-     * @static
-     * @param {any} data
-     * @returns {PostMessageObject}
-     * @memberof Message
+     * On webview start
+     * @param {import('vscode').Uri} uri
      */
-    static webviewDidPose(data) {
-        return { cmd: `webviewDidPose`, data };
+    onDidPose(uri) {
+        // todo
     }
-
     /**
-     * Create a new message of `webviewDidDispose`
-     * @static
-     * @param {any} data
-     * @returns {PostMessageObject}
-     * @memberof Message
+     * On webview deprecated
      */
-    static webviewDidDispose(data) {
-        return { cmd: `webviewDidDispose`, data };
+    onDidDispose() {
+        // todo
     }
-
     /**
-     * Create a new message of `webviewDidChangeViewState`
-     * @static
-     * @param {any} data
-     * @returns {PostMessageObject}
-     * @memberof Message
+     * On webview state changed
+     * @param {import('vscode').WebviewPanelOnDidChangeViewStateEvent} event
      */
-    static webviewDidChangeViewState(data) {
-        return { cmd: `webviewDidChangeViewState`, data };
+    onDidChangeViewState(event) {
+        // todo
     }
-
     /**
-     * Create a new message of `syncBridgeData`
-     * @static
-     * @param {any} data
-     * @returns {PostMessageObject}
-     * @memberof Message
+     * On receive message for handler
+     * @param {ResultHandler} resultHandler 
+     * @param {ReceivedMessageObject} message 
      */
-    static syncBridgeData(data) {
-        return { cmd: `syncBridgeData`, data };
+    onDidReceiveMessage(resultHandler, message) {
+        resultHandler(this.handleReceiveMessage(message));
     }
+    /**
+     * Hande receive message
+     * @param {ReceivedMessageObject} message 
+     */
+    handleReceiveMessage(message) {
+        // todo
+        return undefined;
+    }
+    /**
+     * Activate
+     * @param {import('vscode').ExtensionContext} context vscode extension context
+     * @param {import('./vscode.webview').WebView} webview
+     */
+    activate(context, webview) {
+        return this;
+    }
+    deactivate() { }
 }
 
-/**
- * Received Message from `web` to `vscode`
- * @typedef {{cmd: string, args: {}, reply: boolean, data?: any}} ReceivedMessageObject
- */
-
-/**
- * Handler to received message from `web` to `vscode`
- * @class Handler
- */
-class Handler {
+class WebViewMessageManager {
     /**
-     * Creates an instance of Handler.
-     * @memberof Handler
+     * @param {{postMessage: (message: ReceivedMessageObject) => void}} param0 
      */
-    constructor() {
-        this._Api = {};
-        /**
-         * Handler to received message
-         * @type {(poster: import('vscode').Webview, message: ReceivedMessageObject) => void}
-         */
-        this.received = (poster, message) => {
-            const cmd = message.cmd;
-            const args = message.args;
-            const func = (_ => {
-                if (this.Api.hasOwnProperty(cmd) && this.Api[cmd]) {
-                    return this.Api[cmd];
-                }
-                return undefined;
-            })();
-            if (func) {
-                const p = func(args);
-                if (message.reply && poster) {
-                    if (p) {
-                        if (typeof p.then === 'function') {
-                            p.then(data => {
-                                message.data = data;
-                                poster.postMessage(message);
-                            });
-                        } else {
-                            message.data = p;
-                            poster.postMessage(message);
-                        }
+    constructor({ postMessage }) {
+        this._eventEmitter = new EventEmitter();
+        this._eventEmitter.setMaxListeners(0);
+        /**@type {WebViewMessageCenter[]} */
+        this._messageCenters = [];
+        /**@type {PostMessageHandler} */
+        this._postMessage = postMessage;
+        /**@type {(message: ReceivedMessageObject, result: any) => void} */
+        this.messageResultHandler = (message, result) => {
+            if (message && message.reply) {
+                if (result) {
+                    if (typeof result.then === 'function') {
+                        result.then(data => {
+                            message.data = data;
+                            this.postMessage(message);
+                        });
                     } else {
-                        poster.postMessage(message);
+                        message.data = result;
+                        this.postMessage(message);
                     }
+                } else {
+                    this.postMessage(message);
                 }
             }
         };
+        /**@type {(uri: import('vscode').Uri) => void} */
+        this.postMessage_onDidPose = (uri) => {
+            this._eventEmitter.emit(`webview.onDidPose`, uri);
+        };
+        /**@type {() => void} */
+        this.postMessage_onDidDispose = () => {
+            this._eventEmitter.emit(`webview.onDidDispose`);
+        };
+        /**@type {(event: import('vscode').WebviewPanelOnDidChangeViewStateEvent) => void} */
+        this.postMessage_onDidChangeViewState = (event) => {
+            this._eventEmitter.emit(`webview.onDidChangeViewState`, event);
+        };
+        /**@type {(message: ReceivedMessageObject) => void} */
+        this.postMessage_onDidReceiveMessage = (message) => {
+            /**@type {ResultHandler} */
+            const handler = (result) => {
+                this.messageResultHandler(message, result);
+            };
+            this._eventEmitter.emit(`webview.onDidReceiveMessage`, handler, message);
+        };
     }
-    get Api() { return this._Api; }
+    get postMessage() { return this._postMessage; }
     /**
-     * Add api
-     * @param {object} obj
-     * @memberof Handler
+     * On webview start
+     * @param {(uri?: import('vscode').Uri) => void} listener
+     * @param {boolean} [once=false]
      */
-    addApi(obj) {
-        if (obj instanceof Object) {
-            const Api = obj;
-            for (const key in Api) {
-                if (Api.hasOwnProperty(key)) {
-                    this.Api[key] = Api[key];
-                }
-            }
+    onDidPose(listener, once=false) {
+        if (once) {
+            this._eventEmitter.once(`webview.onDidPose`, listener);
+        } else {
+            this._eventEmitter.on(`webview.onDidPose`, listener);
         }
+        return this;
+    }
+    /**
+     * On webview deprecated
+     * @param {() => void} listener
+     * @param {boolean} [once=false]
+     */
+    onDidDispose(listener, once=false) {
+        if (once) {
+            this._eventEmitter.once(`webview.onDidDispose`, listener);
+        } else {
+            this._eventEmitter.on(`webview.onDidDispose`, listener);
+        }
+        return this;
+    }
+    /**
+     * On webview state changed
+     * @param {(event: import('vscode').WebviewPanelOnDidChangeViewStateEvent) => void} listener
+     * @param {boolean} [once=false]
+     */
+    onDidChangeViewState(listener, once=false) {
+        if (once) {
+            this._eventEmitter.once(`webview.onDidChangeViewState`, listener);
+        } else {
+            this._eventEmitter.on(`webview.onDidChangeViewState`, listener);
+        }
+        return this;
+    }
+    /**
+     * On received message from webview
+     * @param {MessageResultHandler} listener
+     * @param {boolean} [once=false]
+     */
+    onDidReceiveMessage(listener, once=false) {
+        if (once) {
+            this._eventEmitter.once(`webview.onDidReceiveMessage`, listener);
+        } else {
+            this._eventEmitter.on(`webview.onDidReceiveMessage`, listener);
+        }
+        return this;
+    }
+    /**
+     * Add receive message center for message handler
+     * @param {WebViewMessageCenter} center 
+     */
+    addReceiveMessageCenter(center) {
+        this._messageCenters.push(center);
+        center.postMessage = () => this.postMessage;
+        this.onDidPose((...args) => center.onDidPose(...args), false);
+        this.onDidDispose((...args) => center.onDidDispose(...args), false);
+        this.onDidChangeViewState((...args) => center.onDidChangeViewState(...args), false);
+        this.onDidReceiveMessage((...args) => center.onDidReceiveMessage(...args), false);
+        return this;
+    }
+    /**
+     * Activate
+     * @param {import('vscode').ExtensionContext} context vscode extension context
+     * @param {import('./vscode.webview').WebView} webview
+     */
+    activate(context, webview) {
+        this._messageCenters.forEach(mc => mc.activate(context, webview));
+        return this;
+    }
+    deactivate() {
+        this._messageCenters.forEach(mc => mc.deactivate());
     }
 }
 
 module.exports = {
-    Message,
-    Handler
+    WebViewMessageManager,
+    WebViewMessageCenter,
 };

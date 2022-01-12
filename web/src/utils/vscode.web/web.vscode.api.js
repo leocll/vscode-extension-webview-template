@@ -63,15 +63,20 @@ class VscodeApi {
         this._off = this.messageCenter.off;
         // @ts-ignore
         window && window.addEventListener && window.addEventListener('message', this._received);
-        // proxyHandler
-        const proxyHandler = (obj, prop) => {
-            if (prop === '$emit' || prop === '$on') {
-                return obj && obj[prop];
+
+        // proxyApplyHandler
+        const proxyApplyHandler = (target, thisArg, argumentsList) => {
+            return this._post({ cmd, args: argumentsList, reply: true });
+        };
+        // proxyGetHandler
+        const proxyGetHandler = (target, prop) => {
+            if (prop === '$p2p' || prop === '$post' || prop === '$on' || prop === '$once') {
+                return target && target[prop];
             } else {
-                const cmd = obj.key ? `${obj.key}.${prop}`: prop;
+                const cmd = target.key ? `${target.key}.${prop}`: prop;
                 return new Proxy({
                     $p2p: () => {
-                        this._post({ cmd, args: Array.prototype.slice.call(arguments), reply: true });
+                        return this._post({ cmd, args: Array.prototype.slice.call(arguments), reply: true });
                     },
                     $post: () => {
                         this._post({ cmd, args: Array.prototype.slice.call(arguments), reply: false });
@@ -83,9 +88,10 @@ class VscodeApi {
                     /**@type {(callBack: (msg: Message) => void) => void} */
                     $once: (callBack) => {
                         this._on(cmd, callBack, 1);
-                    }
+                    },
                 }, {
-                    get: proxy
+                    get: proxyGetHandler,
+                    apply: proxyApplyHandler,
                 });
             }
         }

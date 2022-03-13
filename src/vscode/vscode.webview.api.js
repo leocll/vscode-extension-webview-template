@@ -7,10 +7,25 @@ const { WebViewMessageCenter } = require('./vscode.message');
 /**
  * @typedef {import('./vscode.message').ResultHandler} ResultHandler
  * @typedef {import('./vscode.message').ReceivedMessageObject} ReceivedMessageObject
+ *
+ * @typedef {{index: number, name: string, folder: string}} WorkspaceFolder
+ * @typedef {{name?: string, uri: string}} AddWorkspaceFolder
+ * @typedef {NodeJS.Platform} Platform
  */
 
 const vscodeApi = {
     workspace: {
+        workspaceFile: async () => {
+            return vscode.workspace.workspaceFile && vscode.workspace.workspaceFile.fsPath;
+        },
+        workspaceFolders: async () => {
+            return vscode.workspace.workspaceFolders.map(wf => {
+                return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
+            });
+        },
+        updateWorkspaceFolders: async (start, deleteCount, add = undefined) => {
+            vscode.workspace.updateWorkspaceFolders(start, deleteCount, ...(add || []).map(wf => { return {name: wf.name, uri: vscode.Uri.file(wf.uri)}; }))
+        }
     }
 };
 
@@ -52,11 +67,6 @@ const ApiPromise = (callBack) => {
     });
 };
 
-/**
- * @typedef {{index: number, name: string, folder: string}} WorkspaceFolder
- * @typedef {{name?: string, uri: string}} AddWorkspaceFolder
- * @typedef {NodeJS.Platform} Platform
- */
 /**
  * @returns {WorkspaceFolder[]}
  */

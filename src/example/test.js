@@ -1,4 +1,6 @@
 const vscode = require("vscode");
+const e = require('./index');
+const test2 = require('./test2');
 
 function activate(context) {
     const provider = new ColorsViewProvider(context.extensionUri);
@@ -9,6 +11,8 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('calicoColors.clearColors', () => {
         provider.clearColors();
     }));
+    e.activate(context);
+    test2.activate(context);
 }
 exports.activate = activate;
 class ColorsViewProvider {

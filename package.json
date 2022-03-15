@@ -10,17 +10,71 @@
         "url": "https://github.com/leocll/vscode-extension-webview-template.git"
     },
     "engines": {
-        "vscode": "^1.32.0"
+        "vscode": "^1.50.0"
     },
     "categories": [
         "Other"
     ],
     "activationEvents": [
         "onCommand:example.webview",
-        "onCommand:example.helloWorld"
+        "onCommand:example.helloWorld",
+        "onView:leocll_example_activitybar.view1",
+        "onView:leocll_example_activitybar.view2",
+        "onView:leocll_example_panel.view1",
+        "onView:leocll_example_panel.view2",
+		"onView:calicoColors.colorsView",
+		"onCommand:calicoColors.addColor",
+		"onCommand:calicoColors.clearColors"
     ],
     "main": "./src/extension.js",
     "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "leocll_example_activitybar",
+                    "title": "Leocll Example Activitybar",
+                    "icon": "media/logo.png"
+                }
+            ],
+            "panel": [
+                {
+                    "id": "leocll_example_panel",
+                    "title": "Leocll Example Panel",
+                    "icon": "media/logo.png"
+                }
+            ]
+        },
+        "views": {
+            "leocll_example_activitybar": [
+                {
+                    "id": "leocll_example_activitybar.view1",
+                    "name": "View1",
+                    "type": "webview"
+                },
+                {
+                    "id": "leocll_example_activitybar.view2",
+                    "name": "View2",
+                    "type": "webview"
+                },
+                {
+					"type": "webview",
+					"id": "calicoColors.colorsView",
+					"name": "Calico Colors"
+				}
+            ],
+            "leocll_example_panel": [
+                {
+                    "id": "leocll_example_panel.view1",
+                    "name": "View1",
+                    "type": "webview"
+                },
+                {
+                    "id": "leocll_example_panel.view2",
+                    "name": "View2",
+                    "type": "webview"
+                }
+            ]
+        },
         "commands": [
             {
                 "command": "example.webview",
@@ -29,7 +83,19 @@
             {
                 "command": "example.helloWorld",
                 "title": "Example: Hello World"
-            }
+            },
+
+			{
+				"command": "calicoColors.addColor",
+				"category": "Calico Colors",
+				"title": "Add Color"
+			},
+			{
+				"command": "calicoColors.clearColors",
+				"category": "Calico Colors",
+				"title": "Clear Colors",
+				"icon": "$(clear-all)"
+			}
         ]
     },
     "scripts": {
@@ -43,8 +109,11 @@
     "devDependencies": {
         "@types/mocha": "^2.2.42",
         "@types/node": "^10.12.21",
-        "@types/vscode": "^1.30.0",
+        "@types/vscode": "^1.50.0",
         "eslint": "^5.13.0",
         "typescript": "^3.3.1"
+    },
+    "dependencies": {
+        "htmlparser2": "^7.2.0"
     }
 }

@@ -23,6 +23,15 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/test"
 			]
+		},
+		{
+			"name": "html Parser",
+			"program": "${workspaceFolder}/test/htmlparser.js",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "pwa-node"
 		}
 	]
 }

@@ -181,6 +181,7 @@ class WebView {
      * @memberof WebView
      */
     getHtml4Path(htmlPath) {
+        return this._tmp(htmlPath);
         // 兼容`v1.38+`
         // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`panel.webview.asWebviewUri(htmlPath)`获得
         const scheme = this.panel.webview.cspSource ? this.panel.webview.cspSource.split(':')[0] : 'vscode-resource';
@@ -202,6 +203,55 @@ class WebView {
             return m;
         });
         return html;
+    }
+
+    _tmp(htmlPath) {
+        const htmlparser2 = require('htmlparser2');
+        const { Element } = require('domhandler');
+        // 兼容`v1.38+`
+        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`panel.webview.asWebviewUri(htmlPath)`获得
+        const scheme = this.panel.webview.cspSource ? this.panel.webview.cspSource.split(':')[0] : 'vscode-resource';
+        const dirPath = path.dirname(htmlPath);
+        let html = fs.readFileSync(htmlPath, 'utf-8');
+        const doc = htmlparser2.parseDocument(html);
+        const convertUri = (uri) => {
+            uri.indexOf('/static') === 0 && (uri = `.${uri}`);
+            const f = vscode.Uri.file(path.resolve(dirPath, uri));
+            if (this.panel.webview.asWebviewUri) {
+                return `${this.panel.webview.asWebviewUri(f)}`;
+            } else {
+                return `${f.with({ scheme }).toString()}`;
+            }
+        };
+        // /**@type {Element} */
+        // let headEle = 
+        htmlparser2.DomUtils.filter(e1 => {
+            /**@type {Element} */
+            // @ts-ignore
+            const e = e1;
+            // console.log(`${e.type} => ${e.name}`);
+            if (e.type === htmlparser2.ElementType.Tag || e.type == htmlparser2.ElementType.Script) {
+                if (e.name === 'meta') {
+
+                } else if (e.name === 'link') {
+                    if (e.attribs.rel === 'stylesheet') {
+                        e.attribs.href = convertUri(e.attribs.href);
+                    }
+                } else if (e.name === 'script') {
+                    e.attribs.src = convertUri(e.attribs.src);
+                }
+            }
+            return e.type === htmlparser2.ElementType.Tag && e.name === 'head';
+        }, doc, true)[0];
+        // if (headEle) {
+        //     const policyEle = new Element('meta', {
+        //         "http-equiv": "Content-Security-Policy",
+        //         content: `default-src 'none'; style-src ${this.webview.cspSource}; script-src 'nonce-${nonce}';`,
+        //     });
+        //     headEle.children.splice(0, 0, policyEle);
+        // }
+        const html1 = htmlparser2.DomUtils.getInnerHTML(doc);
+        return html1;
     }
 }
 

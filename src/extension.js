@@ -1,5 +1,4 @@
-// const example = require('./example');
-const example = require('./example/test');
+const example = require('./example');
 
 /**
  * Called when the extension is activated

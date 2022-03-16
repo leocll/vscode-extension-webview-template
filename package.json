@@ -21,10 +21,7 @@
         "onView:leocll_example_activitybar.view1",
         "onView:leocll_example_activitybar.view2",
         "onView:leocll_example_panel.view1",
-        "onView:leocll_example_panel.view2",
-		"onView:calicoColors.colorsView",
-		"onCommand:calicoColors.addColor",
-		"onCommand:calicoColors.clearColors"
+        "onView:leocll_example_panel.view2"
     ],
     "main": "./src/extension.js",
     "contributes": {
@@ -55,12 +52,7 @@
                     "id": "leocll_example_activitybar.view2",
                     "name": "View2",
                     "type": "webview"
-                },
-                {
-					"type": "webview",
-					"id": "calicoColors.colorsView",
-					"name": "Calico Colors"
-				}
+                }
             ],
             "leocll_example_panel": [
                 {
@@ -83,19 +75,7 @@
             {
                 "command": "example.helloWorld",
                 "title": "Example: Hello World"
-            },
-
-			{
-				"command": "calicoColors.addColor",
-				"category": "Calico Colors",
-				"title": "Add Color"
-			},
-			{
-				"command": "calicoColors.clearColors",
-				"category": "Calico Colors",
-				"title": "Clear Colors",
-				"icon": "$(clear-all)"
-			}
+            }
         ]
     },
     "scripts": {

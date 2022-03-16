@@ -121,22 +121,20 @@ class WebviewViewProvider {
         this._webviewView = webviewView;
         this._webviewContext = context;
         this._token = token;
-        
-        this.test();
 
-        // const webview = this.webview;
-        // webview.options = {
-        //     enableScripts: true,
-        //     localResourceRoots: [vscode.Uri.file(path.dirname(this.htmlPath))], //  be allowed load resource paths.
-        // };
-        // // load html
-        // this.webview.html = this.getHtml4Path(this.htmlPath);
-        // this.webviewView.onDidDispose(() => this.didDispose());
-        // // on webview visibility changed
-        // this.webviewView.onDidChangeVisibility(() => this.didChangeVisibility());
-        // this.webview.onDidReceiveMessage(message => this.didReceiveMessage(message));
+        const webview = this.webview;
+        webview.options = {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.file(path.dirname(this.htmlPath))], //  be allowed load resource paths.
+        };
+        // load html
+        this.webview.html = this.getHtml4Path(this.htmlPath);
+        this.webviewView.onDidDispose(() => this.didDispose());
+        // on webview visibility changed
+        this.webviewView.onDidChangeVisibility(() => this.didChangeVisibility());
+        this.webview.onDidReceiveMessage(message => this.didReceiveMessage(message));
 
-        // this._initData();
+        this._initData();
     }
 
     _initData() {
@@ -163,13 +161,13 @@ class WebviewViewProvider {
      * @memberof WebviewViewProvider
      */
     activate(context, options) {
+        this._extensionContext = context;
         // activate WebviewApi
         WebviewApi.activate(context, 'leocll', this.bridgeData);
-        options || (options = {});
         options.htmlPath || (options.htmlPath = path.join(context.extensionPath, 'web', 'dist', 'index.html'));
         this.htmlPath = options.htmlPath;
         context.subscriptions.push(
-            // vscode.window.registerWebviewViewProvider(options.viewId, this),
+            vscode.window.registerWebviewViewProvider(options.viewId, this),
             vscode.workspace.onDidChangeWorkspaceFolders(() => {
                 this.bridgeData.updateItems({
                     workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
@@ -186,73 +184,6 @@ class WebviewViewProvider {
     }
     
     deactivate() { WebviewApi.deactivate(); }
-
-    test() {
-        this._extensionUri = this.extensionContext.extensionUri;
-        const webviewView = this.webviewView;
-        webviewView.webview.options = {
-			// Allow scripts in the webview
-			enableScripts: true,
-
-			localResourceRoots: [
-				this._extensionUri
-			]
-		};
-
-		webviewView.webview.html = this.getTestHtml();
-
-		webviewView.webview.onDidReceiveMessage(data => {
-			switch (data.type) {
-				case 'colorSelected':
-					{
-						vscode.window.activeTextEditor?.insertSnippet(new vscode.SnippetString(`#${data.value}`));
-						break;
-					}
-			}
-		});
-    }
-    getTestHtml() {
-        const webview = this.webview;
-        // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
-
-		// Do the same for the stylesheet.
-		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
-		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css'));
-		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
-
-		// Use a nonce to only allow a specific script to be run.
-		const nonce = this.getNonce();
-
-		return `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-
-				<!--
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-				<link href="${styleResetUri}" rel="stylesheet">
-				<link href="${styleVSCodeUri}" rel="stylesheet">
-				<link href="${styleMainUri}" rel="stylesheet">
-				
-				<title>Cat Colors</title>
-			</head>
-			<body>
-				<ul class="color-list">
-				</ul>
-
-				<button class="add-color-button">Add Color</button>
-
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
-    }
 
     /**
      * Get html from the file path and replace resources protocol to `vscode-resource`
@@ -279,54 +210,25 @@ class WebviewViewProvider {
                 return `${f.with({ scheme }).toString()}`;
             }
         };
-        const nonce = this.getNonce();
-        /**@type {Element} */
-        // let headEle = undefined;
-        let headEle = htmlparser2.DomUtils.filter(e1 => {
+        htmlparser2.DomUtils.filter(e1 => {
             /**@type {Element} */
             // @ts-ignore
             const e = e1;
             // console.log(`${e.type} => ${e.name}`);
             if (e.type === htmlparser2.ElementType.Tag || e.type == htmlparser2.ElementType.Script) {
-                if (e.name === 'meta') {
-
-                } else if (e.name === 'link') {
+                if (e.name === 'link') {
                     if (e.attribs.rel === 'stylesheet') {
                         e.attribs.href = convertUri(e.attribs.href);
                     }
                 } else if (e.name === 'script') {
                     e.attribs.src = convertUri(e.attribs.src);
-                    e.attribs.nonce = nonce;
+                    // e.attribs.nonce = nonce;
                 }
             }
-            return e.type === htmlparser2.ElementType.Tag && e.name === 'head';
-        }, doc, true)[0];
-        if (headEle) {
-            const policyEle = new Element('meta', {
-                "http-equiv": "Content-Security-Policy",
-                content: `default-src 'none'; style-src ${this.webview.cspSource}; script-src 'nonce-${nonce}';`,
-            });
-            headEle.children.splice(0, 0, policyEle);
-        }
+            return false;
+        }, doc, true);
         const html1 = htmlparser2.DomUtils.getInnerHTML(doc);
         return html1;
-
-        // html = html.replace(/(href=|src=)(.+?)(\ |>)/g, (m, $1, $2, $3) => {
-        //     let uri = $2;
-        //     uri = uri.replace('"', '').replace("'", '');
-        //     uri.indexOf('/static') === 0 && (uri = `.${uri}`);
-        //     if (uri.substring(0, 1) == ".") {
-        //         const furi = vscode.Uri.file(path.resolve(dirPath, uri));
-        //         if (this.webview.asWebviewUri) {
-        //             uri = `${$1}${this.webview.asWebviewUri(furi)}${$3}`;
-        //         } else {
-        //             uri = `${$1}${furi.with({ scheme }).toString()}${$3}`;
-        //         }
-        //         return uri.replace('%22', '');
-        //     }
-        //     return m;
-        // });
-        // return html;
     }
 
     getNonce() {

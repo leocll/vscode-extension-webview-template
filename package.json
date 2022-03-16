@@ -29,14 +29,14 @@
             "activitybar": [
                 {
                     "id": "leocll_example_activitybar",
-                    "title": "Leocll Example Activitybar",
+                    "title": "Example",
                     "icon": "media/logo.png"
                 }
             ],
             "panel": [
                 {
                     "id": "leocll_example_panel",
-                    "title": "Leocll Example Panel",
+                    "title": "Example",
                     "icon": "media/logo.png"
                 }
             ]
@@ -45,24 +45,25 @@
             "leocll_example_activitybar": [
                 {
                     "id": "leocll_example_activitybar.view1",
-                    "name": "View1",
+                    "name": "Example View1",
                     "type": "webview"
                 },
                 {
                     "id": "leocll_example_activitybar.view2",
-                    "name": "View2",
-                    "type": "webview"
+                    "name": "Example View2",
+                    "type": "webview",
+                    "visibility": "visible"
                 }
             ],
             "leocll_example_panel": [
                 {
                     "id": "leocll_example_panel.view1",
-                    "name": "View1",
+                    "name": "Example Panel View1",
                     "type": "webview"
                 },
                 {
                     "id": "leocll_example_panel.view2",
-                    "name": "View2",
+                    "name": "Example Panel View2",
                     "type": "webview"
                 }
             ]

@@ -88,7 +88,6 @@ class WebviewViewProvider {
      * @memberof WebviewViewProvider
      */
     didChangeVisibility() {
-        // const p = state.panel;
         this.onDidChangeVisibility && this.onDidChangeVisibility();
         // this.postMessage(Message.webviewDidChangeViewState(undefined));
         console.log(`Webview(${this.name}) did change visibility.`);
@@ -99,7 +98,7 @@ class WebviewViewProvider {
      * @memberof WebviewViewProvider
      */
     didDispose() {
-        this._panel = undefined;
+        this._webviewView = undefined;
         this.onDidDispose && this.onDidDispose();
         console.log(`Webview(${this.name}) did dispose.`);
     }

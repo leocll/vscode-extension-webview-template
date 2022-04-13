@@ -147,7 +147,7 @@ class WebView {
                     pathSep: path.sep,
                     extensionPath: context.extensionPath,
                     workspaceFile: vscode.workspace.workspaceFile ? vscode.workspace.workspaceFile.fsPath : '',
-                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                    workspaceFolders: (vscode.workspace.workspaceFolders || []).map(wf => {
                         return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
                     }),
                     startPath: uri ? uri.fsPath : '',
@@ -158,7 +158,7 @@ class WebView {
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(() => {
                 this.bridgeData.updateItems({
-                    workspaceFolders: vscode.workspace.workspaceFolders.map(wf => {
+                    workspaceFolders: (vscode.workspace.workspaceFolders || []).map(wf => {
                         return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
                     }),
                 }, true);

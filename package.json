@@ -20,6 +20,7 @@
         "onCommand:example.helloWorld",
         "onView:leocll_example_activitybar.view1",
         "onView:leocll_example_activitybar.view2",
+        "onView:leocll_example_activitybar.view3",
         "onView:leocll_example_panel.view1",
         "onView:leocll_example_panel.view2"
     ],
@@ -46,13 +47,18 @@
                 {
                     "id": "leocll_example_activitybar.view1",
                     "name": "Example View1",
-                    "type": "webview"
+                    "type": "webview",
+                    "visibility": "hidden"
                 },
                 {
                     "id": "leocll_example_activitybar.view2",
                     "name": "Example View2",
-                    "type": "webview",
-                    "visibility": "visible"
+                    "type": "webview"
+                },
+                {
+                    "id": "leocll_example_activitybar.view3",
+                    "name": "Example View3",
+                    "type": "webview"
                 }
             ],
             "leocll_example_panel": [
@@ -64,7 +70,8 @@
                 {
                     "id": "leocll_example_panel.view2",
                     "name": "Example Panel View2",
-                    "type": "webview"
+                    "type": "webview",
+                    "visibility": "collapsed"
                 }
             ]
         },

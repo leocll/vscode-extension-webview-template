@@ -1,29 +1,30 @@
 /**
  * @template T object
  * - Bridge the data between `vscode` and `web`
- * @class BridgeData
+ * @class WebviewData
  */
-class BridgeData {
+class WebviewData {
     /**
-     * Creates an instance of BridgeData.
+     * Creates an instance of WebviewData.
      * @param {T} [cache=undefined]
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     constructor(cache = undefined) {
         /**@type {T} */
         // @ts-ignore
-        this.cache = cache || {};
+        this._cache = cache || {};
         /**
          * Sync handler, post `syncBridgeData` message to `web`
          * @type {(data: {}) => void}
          */
         this.syncHandler = undefined;
     }
+    get cache() { return this._cache; }
 
     /**
      * Sync all, post `syncBridgeData` message to `web`
      * @returns {this}
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     syncAll() {
         this.syncHandler && this.syncHandler(this.cache);
@@ -36,7 +37,7 @@ class BridgeData {
      * @param {any} value
      * @param {boolean} [isSync=true]
      * @returns {this}
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     setItem(key, value, isSync = true) {
         this.cache[key] = value;
@@ -53,7 +54,7 @@ class BridgeData {
      * @param {{}} items
      * @param {boolean} [isSync=true]
      * @returns {this}
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     updateItems(items, isSync = true) {
         for (const key in items) {
@@ -68,7 +69,7 @@ class BridgeData {
      * @param {string} key
      * @param {any} [dft=undefined] default value
      * @returns
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     getItem(key, dft = undefined) {
         return this.cache[key] || dft;
@@ -78,7 +79,7 @@ class BridgeData {
      * Remove item by key
      * @param {string} key
      * @returns
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     removeItem(key) {
         const value = this.cache[key];
@@ -89,7 +90,7 @@ class BridgeData {
     /**
      * Clear all items
      * @returns {this}
-     * @memberof BridgeData
+     * @memberof WebviewData
      */
     clear() {
         // this.cache = {};
@@ -100,4 +101,6 @@ class BridgeData {
     };
 }
 
-module.exports = BridgeData;
+module.exports = {
+    WebviewData,
+};

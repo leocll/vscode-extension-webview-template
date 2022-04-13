@@ -2,10 +2,7 @@ const vscode = require('vscode');
 const os = require('os');
 const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
-const BridgeData = require('./vscode.bridge');
 const { Message, Handler } = require('./vscode.message');
-const WebviewApi = require('./vscode.webviewApi');
-
 const { WebviewData } = require('./vscode.webview.data');
 const { VscodeApi, VscodeContextApi, WebviewDataApi } = require('./vscode.webview.api');
 
@@ -13,11 +10,10 @@ const { VscodeApi, VscodeContextApi, WebviewDataApi } = require('./vscode.webvie
  * @typedef {import('./vscode.message').PostMessageObject} PostMessageObject
  * @typedef {import('./vscode.message').ReceivedMessageObject} ReceivedMessageObject
  */
-// /**
-//  * @template T
-//  * @typedef {import('./vscode.webview.data').WebviewData<T>} WebviewData
-//  * @typedef {}
-//  */
+/**
+ * @typedef {{viewColumn?: vscode.ViewColumn, preserveFocus?: Boolean} & vscode.WebviewPanelOptions & vscode.WebviewOptions} WebviewPanelOptions
+ * @typedef {{htmlPath: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions
+ */
 /**
  * @template T
  * WebView
@@ -34,13 +30,8 @@ class WebView {
         this._setupData(options.data);
 
         this._handler = handler;
-        this._handler.addApi(WebviewApi);
-        this._panel = undefined;
-        this._bridgeData = new BridgeData();
-        this._bridgeData.syncHandler = (data) => {
-            this.postMessage(Message.syncBridgeData(data));
-        };
-        /**@type {(uri: vscode.Uri) => void} */
+        this._view = undefined;
+        /**@type {(uri?: vscode.Uri) => void} */
         this.onDidPose = undefined;
         /**@type {() => void} */
         this.onDidDispose = undefined;
@@ -49,13 +40,11 @@ class WebView {
         /**@type {(message: ReceivedMessageObject) => void} */
         this.onDidReceiveMessage = undefined;
     }
-    get name() { return WebviewApi.name; }
-
+    get name() { return this._name; }
     get data() { return this._data; }
     get dataApi() { return this._dataApi; }
     get handler() { return this._handler; }
-    get panel() { return this._panel; }
-    get bridgeData() { return this._bridgeData; }
+    get view() { return this._view; }
     get uri() { return this._uri; }
 
     _setupData(data) {
@@ -69,46 +58,12 @@ class WebView {
     }
 
     /**
-     * Show panel
-     * @param {vscode.ExtensionContext} context
-     * @param {string} htmlPath
-     * @param {string} [viewType=this.name]
-     * @param {string} [title=this.name]
-     * @param {number} [viewColumn=vscode.ViewColumn.Three]
-     * @param {boolean} [enableScripts=true]
-     * @param {boolean} [retainContextWhenHidden=true]
-     * @memberof WebView
-     */
-    showPanel(context, htmlPath, viewType = this.name, title = this.name, viewColumn = vscode.ViewColumn.Three, enableScripts = true, retainContextWhenHidden = true) {
-        if (this.panel) {
-            this.panel.reveal(viewColumn);
-        } else {
-            this._panel = vscode.window.createWebviewPanel(
-                viewType,
-                title,
-                viewColumn, // show in position of editor
-                {
-                    enableScripts, // default disabled
-                    retainContextWhenHidden, // keep state and avoid being reset When hidden webview
-                    localResourceRoots: [vscode.Uri.file(path.dirname(htmlPath))], //  be allowed load resource paths.
-                }
-            );
-            // load html
-            this.panel.webview.html = this.getHtml4Path(htmlPath);
-            this.panel.onDidDispose(() => this.didDispose(), undefined, context.subscriptions);
-            // on webview visibility changed or position changed
-            this.panel.onDidChangeViewState(state => this.didChangeViewState(state), undefined, context.subscriptions);
-            this.panel.webview.onDidReceiveMessage(message => this.didReceiveMessage(message), undefined, context.subscriptions);
-        }
-    }
-
-    /**
      * Post message
      * @param {PostMessageObject} message
      * @memberof WebView
      */
     postMessage(message) {
-        this.panel && this.panel.webview.postMessage(message);
+        this.view && this.view.webview.postMessage(message);
     }
 
     /**
@@ -117,7 +72,7 @@ class WebView {
      * @memberof WebView
      */
     didReceiveMessage(message) {
-        this.handler && this.handler.received && this.handler.received(this.panel.webview, message);
+        this.handler && this.handler.received && this.handler.received(this.view.webview, message);
         this.onDidReceiveMessage && this.onDidReceiveMessage(message);
         console.log(`Extension(${this.name}) received message: ${message.cmd}`);
     }
@@ -128,7 +83,7 @@ class WebView {
      * @memberof WebView
      */
     didChangeViewState(state) {
-        // const p = state.panel;
+        // const p = state.view;
         this.onDidChangeViewState && this.onDidChangeViewState(state);
         // this.postMessage(Message.webviewDidChangeViewState(undefined));
         console.log(`Webview(${this.name}) did changeView state.`);
@@ -139,58 +94,85 @@ class WebView {
      * @memberof WebView
      */
     didDispose() {
-        this._panel = undefined;
+        this._view = undefined;
         this.onDidDispose && this.onDidDispose();
         console.log(`Webview(${this.name}) did dispose.`);
     }
 
     /**
-     * Activate
-     * @param {vscode.ExtensionContext} context vscode extension context
-     * @param {string} name webview name
-     * @param {string} cmdName cmd name
-     * @param {string} [htmlPath=path.join(context.extensionPath, 'web', 'dist', 'index.html')] html path
+     * Show
+     * @param {vscode.ExtensionContext} context
+     * @param {String} cmdName
+     * @param {ShowWebviewPanelOptions} options
      * @returns {this}
      * @memberof WebView
      */
-    activate(context, name, cmdName, htmlPath = undefined) {
-        // activate WebviewApi
-        WebviewApi.activate(context, name, this.bridgeData);
-        htmlPath || (htmlPath = path.join(context.extensionPath, 'web', 'dist', 'index.html'));
+    show(context, cmdName, options) {
         context.subscriptions.push(
             vscode.commands.registerCommand(cmdName, (uri) => {
                 this._uri = uri;
-                this.showPanel(context, htmlPath);
-                this.bridgeData.updateItems({
-                    platform: os.platform(),
-                    pathSep: path.sep,
-                    extensionPath: context.extensionPath,
-                    workspaceFile: vscode.workspace.workspaceFile ? vscode.workspace.workspaceFile.fsPath : '',
-                    workspaceFolders: (vscode.workspace.workspaceFolders || []).map(wf => {
-                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
-                    }),
+                this._showView(context, options);
+                // @ts-ignore
+                this.data.updateItems({
                     startPath: uri ? uri.fsPath : '',
                 }, false);
-                this.bridgeData.syncAll();
+                this.data.syncAll();
                 this.onDidPose && this.onDidPose(uri);
                 this.postMessage(Message.webviewDidPose(undefined));
-            }),
-            vscode.workspace.onDidChangeWorkspaceFolders(() => {
-                this.bridgeData.updateItems({
-                    workspaceFolders: (vscode.workspace.workspaceFolders || []).map(wf => {
-                        return { index: wf.index, name: wf.name, folder: wf.uri.fsPath };
-                    }),
-                }, true);
-                this.postMessage({
-                    cmd: `onDidChangeWorkspaceFolders`,
-                    data: undefined
-                });
             })
         );
         return this;
     }
-    
-    deactivate() { WebviewApi.deactivate(); }
+
+    /**
+     * Show view
+     * @param {vscode.ExtensionContext} context
+     * @param {ShowWebviewPanelOptions} options
+     * @memberof WebView
+     */
+    _showView(context, options) {
+        const htmlPath = options.htmlPath || path.join(context.extensionPath, 'web', 'dist', 'index.html');
+        /**@type {ShowWebviewPanelOptions} - default options */
+        let opts = {
+            htmlPath,
+            title: this.name,
+            viewColumn: vscode.ViewColumn.Three,
+            preserveFocus: false,
+            enableFindWidget: false,
+            retainContextWhenHidden: true,
+            enableScripts: true,
+            enableCommandUris: false,
+            localResourceRoots: [vscode.Uri.file(path.dirname(htmlPath))],
+            portMapping: undefined,
+        };
+        opts = {...opts, ...options};
+        if (this.view) {
+            this.view.reveal(opts.viewColumn);
+        } else {
+            this._view = vscode.window.createWebviewPanel(
+                this.name,
+                opts.title,
+                {
+                    viewColumn: opts.viewColumn, // show in position of editor
+                    preserveFocus: opts.preserveFocus,
+                },
+                {
+                    enableFindWidget: opts.enableFindWidget,
+                    retainContextWhenHidden: opts.retainContextWhenHidden, // keep state and avoid being reset When hidden webview
+                    enableScripts: opts.enableScripts, // default disabled
+                    enableCommandUris: opts.enableCommandUris,
+                    localResourceRoots: opts.localResourceRoots, //  be allowed load resource paths.
+                    portMapping: opts.portMapping,
+                }
+            );
+            // load html
+            this.view.webview.html = this.getHtml4Path(htmlPath);
+            this.view.onDidDispose(() => this.didDispose(), undefined, context.subscriptions);
+            // on webview visibility changed or position changed
+            this.view.onDidChangeViewState(state => this.didChangeViewState(state), undefined, context.subscriptions);
+            this.view.webview.onDidReceiveMessage(message => this.didReceiveMessage(message), undefined, context.subscriptions);
+        }
+    }
 
     /**
      *Get html from the file path and replace resources protocol to `vscode-resource`
@@ -202,8 +184,8 @@ class WebView {
     getHtml4Path(htmlPath) {
         return this._tmp(htmlPath);
         // 兼容`v1.38+`
-        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`panel.webview.asWebviewUri(htmlPath)`获得
-        const scheme = this.panel.webview.cspSource ? this.panel.webview.cspSource.split(':')[0] : 'vscode-resource';
+        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`view.webview.asWebviewUri(htmlPath)`获得
+        const scheme = this.view.webview.cspSource ? this.view.webview.cspSource.split(':')[0] : 'vscode-resource';
         const dirPath = path.dirname(htmlPath);
         let html = fs.readFileSync(htmlPath, 'utf-8');
         html = html.replace(/(href=|src=)(.+?)(\ |>)/g, (m, $1, $2, $3) => {
@@ -212,8 +194,8 @@ class WebView {
             uri.indexOf('/static') === 0 && (uri = `.${uri}`);
             if (uri.substring(0, 1) == ".") {
                 const furi = vscode.Uri.file(path.resolve(dirPath, uri));
-                if (this.panel.webview.asWebviewUri) {
-                    uri = `${$1}${this.panel.webview.asWebviewUri(furi)}${$3}`;
+                if (this.view.webview.asWebviewUri) {
+                    uri = `${$1}${this.view.webview.asWebviewUri(furi)}${$3}`;
                 } else {
                     uri = `${$1}${furi.with({ scheme }).toString()}${$3}`;
                 }
@@ -228,16 +210,16 @@ class WebView {
         const htmlparser2 = require('htmlparser2');
         const { Element } = require('domhandler');
         // 兼容`v1.38+`
-        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`panel.webview.asWebviewUri(htmlPath)`获得
-        const scheme = this.panel.webview.cspSource ? this.panel.webview.cspSource.split(':')[0] : 'vscode-resource';
+        // `vscode-resource`无法加载？用`vscode-webview-resource`替换，未在文档上查到`vscode-webview-resource`，根据`view.webview.asWebviewUri(htmlPath)`获得
+        const scheme = this.view.webview.cspSource ? this.view.webview.cspSource.split(':')[0] : 'vscode-resource';
         const dirPath = path.dirname(htmlPath);
         let html = fs.readFileSync(htmlPath, 'utf-8');
         const doc = htmlparser2.parseDocument(html);
         const convertUri = (uri) => {
             uri.indexOf('/static') === 0 && (uri = `.${uri}`);
             const f = vscode.Uri.file(path.resolve(dirPath, uri));
-            if (this.panel.webview.asWebviewUri) {
-                return `${this.panel.webview.asWebviewUri(f)}`;
+            if (this.view.webview.asWebviewUri) {
+                return `${this.view.webview.asWebviewUri(f)}`;
             } else {
                 return `${f.with({ scheme }).toString()}`;
             }

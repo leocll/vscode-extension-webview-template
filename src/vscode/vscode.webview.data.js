@@ -15,7 +15,7 @@ class WebviewData {
         this._cache = cache || {};
         /**
          * Sync handler, post `syncBridgeData` message to `web`
-         * @type {(data: {}) => void}
+         * @type {(data: T) => void}
          */
         this.syncHandler = undefined;
     }
@@ -42,16 +42,15 @@ class WebviewData {
     setItem(key, value, isSync = true) {
         this.cache[key] = value;
         if (isSync && this.syncHandler) {
-            const t = {};
-            t[key] = value;
-            this.syncHandler(t);
+            // @ts-ignore
+            this.syncHandler({[key]: value});
         }
         return this;
     }
 
     /**
      * Update items, same as set some items
-     * @param {{}} items
+     * @param {T} items
      * @param {boolean} [isSync=true]
      * @returns {this}
      * @memberof WebviewData
@@ -83,7 +82,7 @@ class WebviewData {
      */
     removeItem(key) {
         const value = this.cache[key];
-        this.cache[key] = undefined;
+        delete this.cache[key];
         return value;
     };
 

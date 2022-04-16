@@ -1,4 +1,4 @@
-const example = require('./example');
+const example = require('./example/index.bk');
 
 /**
  * Called when the extension is activated

@@ -14,7 +14,7 @@ class WebviewData {
         // @ts-ignore
         this._cache = cache || {};
         /**
-         * Sync handler, post `syncBridgeData` message to `web`
+         * Sync handler, post `syncWebviewData` message to `web`
          * @type {(data: T) => void}
          */
         this.syncHandler = undefined;
@@ -22,11 +22,11 @@ class WebviewData {
     get cache() { return this._cache; }
 
     /**
-     * Sync all, post `syncBridgeData` message to `web`
+     * Sync, post `syncWebviewData` message to `web`
      * @returns {this}
      * @memberof WebviewData
      */
-    syncAll() {
+    sync() {
         this.syncHandler && this.syncHandler(this.cache);
         return this;
     }
@@ -35,11 +35,11 @@ class WebviewData {
      * Set item
      * @param {string} key
      * @param {any} value
-     * @param {boolean} [isSync=true]
+     * @param {boolean} [isSync=true] - default `true`
      * @returns {this}
      * @memberof WebviewData
      */
-    setItem(key, value, isSync = true) {
+    set(key, value, isSync = true) {
         this.cache[key] = value;
         if (isSync && this.syncHandler) {
             // @ts-ignore
@@ -51,14 +51,12 @@ class WebviewData {
     /**
      * Update items, same as set some items
      * @param {T} items
-     * @param {boolean} [isSync=true]
+     * @param {boolean} [isSync=true] - default `true`
      * @returns {this}
      * @memberof WebviewData
      */
-    updateItems(items, isSync = true) {
-        for (const key in items) {
-            this.setItem(key, items[key], false);
-        }
+    update(items, isSync = true) {
+        Object.assign(this.cache, items);
         isSync && this.syncHandler && this.syncHandler(items);
         return this;
     };
@@ -66,11 +64,11 @@ class WebviewData {
     /**
      * Get item
      * @param {string} key
-     * @param {any} [dft=undefined] default value
+     * @param {any} [dft=undefined] - default `undefined`
      * @returns
      * @memberof WebviewData
      */
-    getItem(key, dft = undefined) {
+    get(key, dft = undefined) {
         return this.cache[key] || dft;
     };
 
@@ -80,26 +78,50 @@ class WebviewData {
      * @returns
      * @memberof WebviewData
      */
-    removeItem(key) {
+    pop(key) {
         const value = this.cache[key];
         delete this.cache[key];
         return value;
     };
 
+    // /**
+    //  * Clear all items
+    //  * @returns {this}
+    //  * @memberof WebviewData
+    //  */
+    // clear() {
+    //     // this.cache = {};
+    //     Object.keys(this.cache).forEach(k => {
+    //         delete this.cache[k];
+    //     });
+    //     return this;
+    // };
+}
+
+/**
+ * @template T
+ */
+ class WebviewDataApi {
     /**
-     * Clear all items
-     * @returns {this}
-     * @memberof WebviewData
+     * @param {WebviewData<T>} data 
      */
-    clear() {
-        // this.cache = {};
-        Object.keys(this.cache).forEach(k => {
-            delete this.cache[k];
-        });
-        return this;
-    };
+    constructor(data) {
+        /**@type {WebviewData<T>} */
+        this.data = data;
+        this.api = {
+            /**@type {() => Promise<T>} - Get webview data */
+            getBridgeData: async () => {
+                return {...this.data.cache};
+            },
+            /**@type {(items: T) => Promise<void>} - Update webview data */
+            updateBridgeData: async (items) => {
+                this.data.update(items, false);
+            },
+        };
+    }
 }
 
 module.exports = {
     WebviewData,
+    WebviewDataApi,
 };

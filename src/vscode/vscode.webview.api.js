@@ -14,10 +14,9 @@ const vscode = require('vscode');
  */
 class VscodeApi {
     /**
-     * @param {{name?: String, outputChannel?: vscode.OutputChannel|String, terminal?: vscode.Terminal|String}} options 
+     * @param {{name: String, outputChannel?: vscode.OutputChannel, terminal?: vscode.Terminal}} options 
      */
-    constructor(options=undefined) {
-        options = options || {};
+    constructor(options) {
         this.options = options;
         this.api = {
             /**
@@ -302,22 +301,16 @@ class VscodeApi {
     }
     get outputChannel() {
         if (!this._outputChannel) {
-            if (!this.options.outputChannel) {
-                return undefined;
-            }
             const options = this.options;
-            this._outputChannel = typeof options.outputChannel === 'string' ? vscode.window.createOutputChannel(this.name) : options.outputChannel;
+            this._outputChannel = options.outputChannel || vscode.window.createOutputChannel(this.name);
             this._outputChannel.show(true);
         }
         return this._outputChannel;
     }
     get terminal() {
         if (!this._terminal) {
-            if (!this.options.terminal) {
-                return undefined;
-            }
             const options = this.options;
-            this._terminal = typeof options.terminal === 'string' ? vscode.window.createTerminal(this.name) : options.terminal;
+            this._terminal = options.terminal || vscode.window.createTerminal(this.name);
         }
         return this._terminal;
     }
@@ -358,7 +351,7 @@ class VscodeContextApi {
             },
             /**
              * Get workspace state
-             * @type {() => Promise<{[x: string]: any}>}
+             * @type {() => Promise<T>}
              */
             getWorkspaceState: async () => {
                 // @ts-ignore
@@ -400,32 +393,14 @@ class VscodeContextApi {
                     }
                 }
             },
-        };
-    }
-}
-
-/**
- * @template T
- * @typedef {import('./vscode.webview.data').WebviewData<T>} WebviewData
- */
-/**
- * @template T
- */
-class WebviewDataApi {
-    /**
-     * @param {WebviewData<T>} data 
-     */
-    constructor(data) {
-        /**@type {WebviewData<T>} */
-        this.data = data;
-        this.api = {
-            /**@type {() => Promise<T>} - Get bridge data */
-            getBridgeData: async () => {
-                return this.data.cache;
-            },
-            /**@type {(items: T) => Promise<void>} - Update bridge data */
-            updateBridgeData: async (items) => {
-                this.data.updateItems(items, false);
+            /**
+             * Get state
+             * @type {() => Promise<T>}
+             */
+            getState: async () => {
+                const globalState = await this.api.getGlobalState();
+                const workspaceState = await this.api.getWorkspaceState();
+                return Object.assign(globalState, workspaceState);
             },
         };
     }
@@ -434,5 +409,4 @@ class WebviewDataApi {
 module.exports = {
     VscodeApi,
     VscodeContextApi,
-    WebviewDataApi,
 };

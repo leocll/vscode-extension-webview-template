@@ -10,9 +10,9 @@ const vscode = require('vscode');
 
 /**
  * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
- * @class VscodeApi
+ * @class WebviewVscodeApi
  */
-class VscodeApi {
+class WebviewVscodeApi {
     /**
      * @param {{name: String, outputChannel?: vscode.OutputChannel, terminal?: vscode.Terminal}} options 
      */
@@ -320,7 +320,7 @@ class VscodeApi {
 /**
  * @template T
  */
-class VscodeContextApi {
+class WebviewVscodeContextApi {
     /**
      * @param {vscode.ExtensionContext} context 
      */
@@ -355,21 +355,21 @@ class VscodeContextApi {
              */
             getWorkspaceState: async () => {
                 // @ts-ignore
-                return this.context.workspaceState._value || this.context.workspaceState.keys().map(key => {
+                return this.context.workspaceState._value || Object.assign({}, {}, ...this.context.workspaceState.keys().map(key => {
                     return {[key]: this.context.workspaceState.get(key)};
-                }).reduce((a, b) => Object.assign({}, a, b), {});
+                }));
+                // this.context.workspaceState.keys().map(key => {
+                //     return {[key]: this.context.workspaceState.get(key)};
+                // }).reduce((a, b) => Object.assign({}, a, b), {});
             },
             /**
              * Update workspace state
              * @type {(states: T) => Promise<void>}
              */
             updateWorkspaceState: async (states) => {
-                for (const key in states) {
-                    if (states.hasOwnProperty(key)) {
-                        const value = states[key];
-                        this.context.workspaceState.update(key, value);
-                    }
-                }
+                Object.entries(states).forEach(([key, value]) => {
+                    this.context.workspaceState.update(key, value);
+                });
             },
             /**
              * Get global state
@@ -377,21 +377,21 @@ class VscodeContextApi {
              */
             getGlobalState: async () => {
                 // @ts-ignore
-                return this.context.globalState._value || this.context.globalState.keys().map(key => {
+                return this.context.globalState._value || Object.assign({}, {}, ...this.context.globalState.keys().map(key => {
                     return {[key]: this.context.globalState.get(key)};
-                }).reduce((a, b) => Object.assign({}, a, b), {});
+                }));
+                // this.context.globalState.keys().map(key => {
+                //     return {[key]: this.context.globalState.get(key)};
+                // }).reduce((a, b) => Object.assign({}, a, b), {});
             },
             /**
              * Update global state
              * @type {(states: T) => Promise<void>}
              */
             updateGlobalState: async (states) => {
-                for (const key in states) {
-                    if (states.hasOwnProperty(key)) {
-                        const value = states[key];
-                        this.context.globalState.update(key, value);
-                    }
-                }
+                Object.entries(states).forEach(([key, value]) => {
+                    this.context.globalState.update(key, value);
+                });
             },
             /**
              * Get state
@@ -407,6 +407,6 @@ class VscodeContextApi {
 }
 
 module.exports = {
-    VscodeApi,
-    VscodeContextApi,
+    WebviewVscodeApi,
+    WebviewVscodeContextApi,
 };

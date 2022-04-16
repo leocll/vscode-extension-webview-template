@@ -113,7 +113,7 @@ class Webview {
             }),
         };
         // @ts-ignore
-        this.data.update(data);
+        this.data.update(data, false);
         this.events.onDidPose && this.events.onDidPose(uri);
         console.log(`Webview(${this.name}) did dispose.`);
     }

@@ -1,3 +1,4 @@
+const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
 const vscode = require('vscode');
 const { WebviewPanel, WebviewView } = require('../vscode/vscode.webview.view');
 const { VscodeApi, VscodeContextApi } = require('../vscode/vscode.webview.api');
@@ -8,6 +9,7 @@ const name = 'Example';
  * @param {vscode.ExtensionContext} context
  */
 const activate = (context) => {
+    const htmlPath = path.join(context.extensionPath, 'web', 'dist', 'index.html');
     const api1 = new VscodeApi({ name });
     const api2 = new VscodeContextApi(context);
 
@@ -23,6 +25,7 @@ const activate = (context) => {
     webviewPanel.handler.addApi(api1.api, api2.api);
     webviewPanel.register(context, {
         command: 'example.webview',
+        htmlPath,
     });
     // example.helloWorld
     context.subscriptions.push(
@@ -39,6 +42,7 @@ const activate = (context) => {
         webviewView.handler.addApi(api1.api, api2.api);
         webviewView.register(context, {
             viewId: id,
+            htmlPath
         });
     });
 };

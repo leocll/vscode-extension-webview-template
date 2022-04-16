@@ -239,7 +239,7 @@ class Webview {
  * @typedef {import('./vscode.webview.api').WorkspaceFolder} WorkspaceFolder
  * @typedef {{startPath?: String, platform: NodeJS.Platform, pathSep: String, extensionPath: String, workspaceFile?: String, workspaceFolders: WorkspaceFolder[]}} DefaultWebviewData
  * @typedef {{viewColumn?: vscode.ViewColumn, preserveFocus?: Boolean} & vscode.WebviewPanelOptions & vscode.WebviewOptions} WebviewPanelOptions
- * @typedef {{htmlPath?: String, viewType?: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions
+ * @typedef {{htmlPath: String, viewType?: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions
  * @typedef {{command: String} & ShowWebviewPanelOptions} RegisterWebviewPanelOptions
  */
 /**
@@ -284,7 +284,7 @@ class WebviewPanel extends Webview {
             this.panel.reveal(options.viewColumn || vscode.ViewColumn.Three);
             return;
         }
-        const htmlPath = options.htmlPath || path.join(context.extensionPath, 'web', 'dist', 'index.html');
+        const htmlPath = options.htmlPath;
         /**@type {ShowWebviewPanelOptions} - default options */
         const opts = {
             htmlPath,
@@ -328,7 +328,7 @@ class WebviewPanel extends Webview {
 
 /**
  * @typedef {vscode.WebviewOptions} WebviewViewOptions
- * @typedef {{htmlPath?: String} & WebviewViewOptions} ShowWebviewViewOptions
+ * @typedef {{htmlPath: String} & WebviewViewOptions} ShowWebviewViewOptions
  * @typedef {{viewId: String} & ShowWebviewViewOptions} RegisterWebviewViewOptions
  */
 /**
@@ -362,7 +362,7 @@ class WebviewPanel extends Webview {
      * @memberof WebviewView
      */
     resolveWebviewView(webviewView, context, token) {
-        console.log(`resolveWebviewView: `, webviewView);
+        console.log(`Webview(${this.name}) did resolveWebviewView.`);
         if (this.webviewView) {
             this.webviewView.show();
             return;
@@ -379,9 +379,8 @@ class WebviewPanel extends Webview {
      * @memberof WebviewView
      */
      _show() {
-        const context = this.extensionContext;
         const options = this._options;
-        const htmlPath = options.htmlPath || path.join(context.extensionPath, 'web', 'dist', 'index.html');
+        const htmlPath = options.htmlPath;
         /**@type {WebviewViewOptions} - default options */
         const opts = {
             enableScripts: true,
@@ -398,7 +397,6 @@ class WebviewPanel extends Webview {
         this._disposables = [];
         this._disposables.push(
             view.onDidDispose(() => this._didDispose()),
-            // on webview visibility changed
             view.onDidChangeVisibility(() => this._didChangeVisibility()),
             view.webview.onDidReceiveMessage(message => this._didReceiveMessage(message)),
         );

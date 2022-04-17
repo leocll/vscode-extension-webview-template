@@ -1,5 +1,3 @@
-// @ts-nocheck
-/* eslint-disable spaced-comment */
 /**
  * @typedef {import('./web.vscode').default} Vscode Vscode hook in web
  */
@@ -99,15 +97,15 @@ class BridgeData extends GlobalState {
      */
     activate = (vscode = undefined) => {
         this._vscode = vscode;
-        this.vscode.onSyncBridgeData((msg) => {
+        this.vscode.onSyncWebviewData((msg) => {
             msg.data && this._update(msg.data, false);
         }, 0);
-        this.data && this.vscode.getBridgeData().then((msg) => {
+        this.data && this.vscode.getWebviewData().then((msg) => {
             msg.data && this._update(msg.data, false);
         });
         return this;
     }
-    sync = (state) => { this.vscode.updateBridgeData(state); }
+    sync = (state) => { this.vscode.updateWebviewData(state); }
 }
 
 class WebviewData {

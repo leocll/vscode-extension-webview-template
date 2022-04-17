@@ -110,11 +110,11 @@ class WebviewData {
         this.data = data;
         this.api = {
             /**@type {() => Promise<T>} - Get webview data */
-            getBridgeData: async () => {
+            getWebviewData: async () => {
                 return {...this.data.cache};
             },
             /**@type {(items: T) => Promise<void>} - Update webview data */
-            updateBridgeData: async (items) => {
+            updateWebviewData: async (items) => {
                 this.data.update(items, false);
             },
         };

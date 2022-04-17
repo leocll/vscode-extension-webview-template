@@ -82,30 +82,30 @@ class Vscode {
     // }
 
     /**
-     * On recrived message of sync bridge data
+     * On recrived message of sync webview data
      * @param {(msg: Message) => void} callBack
      * @param {number} times
      * @memberof Vscode
      */
-    onSyncBridgeData = (callBack, times = 1) => {
-        this.on(`syncBridgeData`, callBack, times);
+    onSyncWebviewData = (callBack, times = 1) => {
+        this.on(`syncWebviewData`, callBack, times);
         return this;
     }
 
     /**
-     * Get bridge data
+     * Get webview data
      * @type {() => Promise<{data: any}>}
      */
-    getBridgeData = () => {
-        return this.post({ cmd: `getBridgeData` });
+    getWebviewData = () => {
+        return this.post({ cmd: `getWebviewData` });
     }
 
     /**
-     * Update bridge data
+     * Update webview data
      * @type {(data: any) => void}
      */
-    updateBridgeData = (data) => {
-        this.post({ cmd: `updateBridgeData`, args: data, reply: false });
+    updateWebviewData = (data) => {
+        this.post({ cmd: `updateWebviewData`, args: data, reply: false });
     }
 
     /**

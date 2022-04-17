@@ -11,8 +11,8 @@ const { WebviewData, WebviewDataApi } = require('./webview.data');
  * @typedef {import('./webview.message').ReceivedMessageObject} ReceivedMessageObject
  */
 /**
- * @template T
  * Webview
+ * @template T
  * @class Webview
  */
 class Webview {
@@ -243,10 +243,10 @@ class Webview {
  * @typedef {{command: String} & ShowWebviewPanelOptions} RegisterWebviewPanelOptions
  */
 /**
- * @template T
  * WebviewPanel
+ * @template T
  * @class WebviewPanel
- * @extends Webview<T>
+ * @extends {Webview<T>}
  */
 class WebviewPanel extends Webview {
 
@@ -332,11 +332,11 @@ class WebviewPanel extends Webview {
  * @typedef {{viewId: String, retainContextWhenHidden?: Boolean} & ShowWebviewViewOptions} RegisterWebviewViewOptions
  */
 /**
- * @template T
  * WebviewView
+ * @template T
  * @class WebviewView
- * @extends Webview<T>
- * @implements vscode.WebviewViewProvider
+ * @extends {Webview<T>}
+ * @implements {vscode.WebviewViewProvider}
  */
  class WebviewView extends Webview {
 

@@ -18,7 +18,7 @@ export default {
     },
     methods: {
         getExtensionPath() {
-            this.msg = window.$data.extensionPath;
+            this.msg = window.$data.cache.extensionPath;
         },
         selectFile() {
             window.$vscode.showOpenDialog({canSelectFiles: true}).then(msg => {

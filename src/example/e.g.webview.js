@@ -3,8 +3,8 @@ const { WebviewPanel, WebviewView } = require('../vscode/webview.view');
 const { utils } = require('../vscode/webview.utils');
 
 /**
- * @template T
  * `EGWebViewPanel` business class
+ * @template T
  * @class EGWebViewPanel
  * @extends {WebviewPanel<T>}
  */
@@ -38,8 +38,8 @@ class EGWebViewPanel extends WebviewPanel {
 }
 
 /**
- * @template T
  * `EGWebViewView` business class
+ * @template T
  * @class EGWebViewView
  * @extends {WebviewView<T>}
  */

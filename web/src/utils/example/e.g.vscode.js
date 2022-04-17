@@ -1,7 +1,7 @@
 import { Vscode } from '../vscode.web';
 
 /**
- *vscode API of business
+ * vscode API of business
  *
  * @class EGVscode
  * @extends {Vscode}

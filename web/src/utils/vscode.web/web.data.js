@@ -1,160 +1,162 @@
 /**
- * @typedef {import('./web.vscode').default} Vscode Vscode hook in web
+ * Data for saving and synchronizing
+ * @template T
+ * @class SyncData
  */
-
-/**
- * Global state, for saving and synchronizing global state of `vscode`
- * @class GlobalState
- */
-class GlobalState {
+class SyncData {
     /**
-     * Creates an instance of GlobalState.
-     * @param {Vscode} [vscode=undefined]
-     * @memberof GlobalState
+     * Creates an instance of SyncData.
+     * @param {T} [cache=undefined]
+     * @memberof SyncData
      */
-    constructor(vscode = undefined) {
-        this._vscode = vscode;
-        this.data = {};
+    constructor(cache=undefined) {
+        /**@type {T} */
+        // @ts-ignore
+        this._cache = cache || {};
+        /**@type {(data: T) => void} */
+        this.syncHandler = undefined;
     }
-    get vscode() { return this._vscode; }
+    get cache() { return this._cache; }
 
     /**
-     * Update state
-     * @private
-     * @param {{}} state
-     * @param {boolean} isSync
-     * @memberof GlobalState
+     * Sync
+     * @param {T} state
+     * @memberof SyncData
      */
-    _update = (state, isSync) => {
-        if (!this.data) { return this; }
-        for (const key in state) {
-            if (state.hasOwnProperty(key)) {
-                this.data[key] = state[key];
-            }
-        }
+    sync = (state) => {
+        this.syncHandler && this.syncHandler(state);
+        return this;
+    }
+
+    /**
+     * Update
+     * @param {T} state
+     * @param {boolean} [isSync=true] - default `true`
+     * @memberof SyncData
+     */
+    update = (state, isSync=true) => {
+        if (!this.cache) { return this; }
+        Object.assign(this.cache, state)
         isSync && this.sync(state);
         return this;
     }
 
     /**
-     * Update state
-     * @param {{}} state
-     * @memberof GlobalState
+     * Set
+     * @param {string} key
+     * @param {any} value
+     * @param {boolean} [isSync=true] - default `true`
+     * @memberof SyncData
      */
-    update = (state) => { return this._update(state, true); }
+    set = (key, value, isSync=true) => {
+        if (!this.cache) { return this; }
+        this.cache[key] = value;
+        isSync && this.sync({[key]: value});
+        return this;
+    }
+
+    /**
+     * Get
+     * @param {string} key
+     * @param {any} [dft=undefined] - default `undefined`
+     * @memberof SyncData
+     */
+    get = (key, dft=undefined) => {
+        return (this.cache || {})[key] || dft;
+    };
 
     /**
      * Activate
-     * @param {Vscode} [vscode=undefined]
-     * @memberof GlobalState
+     * @param {() => Promise<{data: T}>} [initHandler=undefined]
+     * @memberof SyncData
      */
-    activate = (vscode = undefined) => {
-        this._vscode = vscode;
-        this.data && this.vscode.getGlobalState().then((msg) => {
-            msg.data && this._update(msg.data, false);
+    activate = (initHandler=undefined) => {
+        initHandler && initHandler().then((msg) => {
+            msg.data && this.update(msg.data, false);
         });
         return this;
     }
 
     /**
      * Deactivate
-     * @memberof GlobalState
+     * @memberof SyncData
      */
     deactivate = () => {
-        this._vscode = undefined;
-        this._data = undefined;
     }
-
-    /**
-     * Sync state
-     * @param {{}} state
-     * @memberof GlobalState
-     */
-    sync = (state) => { this.vscode.updateGlobalState(state); }
 }
-
-class WorkspaceState extends GlobalState {
-    /**
-     * Activate
-     * @param {Vscode} [vscode=undefined]
-     * @memberof GlobalState
-     */
-    activate = (vscode = undefined) => {
-        this._vscode = vscode;
-        this.data && this.vscode.getWorkspaceState().then((msg) => {
-            msg.data && this._update(msg.data, false);
-        });
-        return this;
-    }
-    sync = (state) => { this.vscode.updateWorkspaceState(state); }
-}
-
-class BridgeData extends GlobalState {
-    /**
-     * Activate
-     * @param {Vscode} [vscode=undefined]
-     * @memberof GlobalState
-     */
-    activate = (vscode = undefined) => {
-        this._vscode = vscode;
-        this.vscode.onSyncWebviewData((msg) => {
-            msg.data && this._update(msg.data, false);
-        }, 0);
-        this.data && this.vscode.getWebviewData().then((msg) => {
-            msg.data && this._update(msg.data, false);
-        });
-        return this;
-    }
-    sync = (state) => { this.vscode.updateWebviewData(state); }
-}
-
+/**
+ * @typedef {import('./web.vscode').default} Vscode - Vscode hook in web
+ * @typedef {import('../../../../src/vscode/webview.view').DefaultWebviewData} DefaultWebviewData
+ */
+/**
+ * Data for `globalState`,`workspaceState`,`webviewData`
+ * @template T1
+ * @template T2
+ * @class WebviewData
+ */
 class WebviewData {
     /**
      * Creates an instance of WebviewData.
-     * @param {Vscode} [vscode=undefined]
+     * @param {T1 & T2 & DefaultWebviewData} []
      * @memberof WebviewData
      */
-    constructor(vscode = undefined) {
-        this.__vscode__ = vscode;
-        this.__globalState__ = new GlobalState(vscode);
-        this.__workspaceState__ = new WorkspaceState(vscode);
-        this.__bridgeData__ = new BridgeData(vscode);
-        this.$globalState.data = this;
-        this.$workspaceState.data = this;
-        this.$bridgeData.data = this;
-
-        /**@type {NodeJS.Platform} - current os platform*/
-        this.platform = 'darwin';
-        /**@type {'/' | '\\'} - current path sep */
-        this.pathSep = '/';
-        /**@type {string} - current extension folder path */
-        this.extensionPath = '';
-        /**@type {string} - current workspace file */
-        this.workspaceFile = '';
-        /**@type {import('./web.vscode').WorkspaceFolder[]} - current workspace folders */
-        this.workspaceFolders = [];
-        /**@type {string} - start path */
-        this.startPath = '';
+    constructor(cache=undefined) {
+        /**@type {T1 & T2 & DefaultWebviewData} */
+        this._cache = Object.assign({}, this._getDefaultCache(), cache || {});
+        /**@type {SyncData<T1>} */
+        this._globalState = this._initCacheData();
+        /**@type {SyncData<T1>} */
+        this._workspaceState = this._initCacheData();
+        /**@type {SyncData<T2 & DefaultWebviewData>} */
+        this._webviewData = this._initCacheData();
     }
-    get $vscode() { return this.__vscode__; }
-    get $globalState() { return this.__globalState__; }
-    get $workspaceState() { return this.__workspaceState__; }
-    get $bridgeData() { return this.__bridgeData__; }
+    get cache() { return this._cache; }
+    get globalState() { return this._globalState; }
+    get workspaceState() { return this._workspaceState; }
+    get webviewData() { return this._webviewData; }
+
+    /**
+     * @private
+     * @returns {DefaultWebviewData}
+     */
+    _getDefaultCache() {
+        return {
+            /**- current os platform*/
+            platform: 'darwin',
+            /**- current path sep */
+            pathSep: '/',
+            /**- current extension folder path */
+            extensionPath: '',
+            /**- current workspace file */
+            workspaceFile: '',
+            /**- current workspace folders */
+            workspaceFolders: [],
+            /**- start path */
+            startPath: '',
+        };
+    }
+    
+    /**
+     * @private
+     * @returns {SyncData}
+     */
+    _initCacheData() {
+        return new SyncData(this.cache);
+    }
 
     /**
      * Activate
-     * @param {Vscode} [vscode=undefined]
+     * @param {Vscode} [vscode]
      * @memberof GlobalState
      */
-    $activate(vscode = undefined) {
-        vscode && (this.__vscode__ = vscode);
-        if (!this.$vscode) { throw Error("vscode can't be null."); }
-        this.$globalState.activate(this.$vscode);
-        this.$workspaceState.activate(this.$vscode);
-        this.$bridgeData.activate(this.$vscode);
-        // this.$vscode.onwebviewDidDispose(() => {
-        //     this.$deactivate();
-        // });
+    $activate(vscode) {
+        if (!vscode) { throw Error("vscode can't be null."); }
+        this.globalState.syncHandler = vscode.updateGlobalState;
+        this.workspaceState.syncHandler = vscode.updateWorkspaceState;
+        this.webviewData.syncHandler = vscode.updateWebviewData;
+        this.globalState.activate(vscode.getGlobalState);
+        this.workspaceState.activate(vscode.getWorkspaceState);
+        this.webviewData.activate(vscode.getWebviewData);
         return this;
     }
 
@@ -163,15 +165,13 @@ class WebviewData {
      * @memberof WebviewData
      */
     $deactivate() {
-        this.$globalState.deactivate();
-        this.$workspaceState.deactivate();
-        this.$bridgeData.deactivate();
+        this.globalState.deactivate();
+        this.workspaceState.deactivate();
+        this.webviewData.deactivate();
     }
 }
 
 export {
+    SyncData,
     WebviewData,
-    GlobalState,
-    WorkspaceState,
-    BridgeData
 };

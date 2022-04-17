@@ -1,12 +1,10 @@
 import Vscode from './web.vscode';
-import { WebviewData, GlobalState, WorkspaceState, BridgeData } from './web.data';
+import { SyncData, WebviewData } from './web.data';
 import Page from './web.page';
 
 export {
     Vscode,
+    SyncData,
     WebviewData,
-    GlobalState,
-    WorkspaceState,
-    BridgeData,
     Page
 };

@@ -1,10 +1,12 @@
 import { WebviewData } from '../vscode.web';
 
+/**
+ * Data of business
+ * @class EGData
+ * @extends {WebviewData<{},{}>}
+ */
 class EGData extends WebviewData {
-    constructor(vscode = undefined) {
-        super(vscode);
-        this.egdata = undefined;
-    }
+    // add code
 }
 
 export {

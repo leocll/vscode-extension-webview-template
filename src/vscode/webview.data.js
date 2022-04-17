@@ -1,6 +1,6 @@
 /**
+ * Data between `vscode` and `web`
  * @template T
- * - Bridge the data between `vscode` and `web`
  * @class WebviewData
  */
 class WebviewData {

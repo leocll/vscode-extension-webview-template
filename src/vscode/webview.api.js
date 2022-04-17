@@ -340,8 +340,8 @@ class WebviewVscodeApi {
 }
 
 /**
- * @template T
  * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
+ * @template T
  * @class WebviewVscodeContextApi
  */
 class WebviewVscodeContextApi {

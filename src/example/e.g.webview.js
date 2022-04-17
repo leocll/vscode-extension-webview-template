@@ -1,6 +1,6 @@
 const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
-const { WebviewPanel, WebviewView } = require('../vscode/vscode.webview.view');
-const { utils } = require('../vscode/vscode.utils');
+const { WebviewPanel, WebviewView } = require('../vscode/webview.view');
+const { utils } = require('../vscode/webview.utils');
 
 /**
  * @template T

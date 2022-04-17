@@ -209,7 +209,7 @@ class Vscode {
 
     /**
      * Get current platform
-     * @typedef {import('../../../../src/vscode/vscode.utils').Platform} Platform
+     * @typedef {import('../../../../src/vscode/webview.api').Platform} Platform
      * @type {() => Promise<{data: Platform}>}
      */
     getPlatform = () => {

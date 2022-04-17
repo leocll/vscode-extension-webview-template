@@ -2,13 +2,13 @@ const vscode = require('vscode');
 const os = require('os');
 const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
-const { Message } = require('./vscode.webview.message');
-const { WebviewHandler } = require('./vscode.webview.handler');
-const { WebviewData, WebviewDataApi } = require('./vscode.webview.data');
+const { Message } = require('./webview.message');
+const { WebviewHandler } = require('./webview.handler');
+const { WebviewData, WebviewDataApi } = require('./webview.data');
 
 /**
- * @typedef {import('./vscode.webview.message').PostMessageObject} PostMessageObject
- * @typedef {import('./vscode.webview.message').ReceivedMessageObject} ReceivedMessageObject
+ * @typedef {import('./webview.message').PostMessageObject} PostMessageObject
+ * @typedef {import('./webview.message').ReceivedMessageObject} ReceivedMessageObject
  */
 /**
  * @template T
@@ -236,7 +236,7 @@ class Webview {
 }
 
 /**
- * @typedef {import('./vscode.webview.api').WorkspaceFolder} WorkspaceFolder
+ * @typedef {import('./webview.api').WorkspaceFolder} WorkspaceFolder
  * @typedef {{startPath?: String, platform: NodeJS.Platform, pathSep: String, extensionPath: String, workspaceFile?: String, workspaceFolders: WorkspaceFolder[]}} DefaultWebviewData
  * @typedef {{viewColumn?: vscode.ViewColumn, preserveFocus?: Boolean} & vscode.WebviewPanelOptions & vscode.WebviewOptions} WebviewPanelOptions
  * @typedef {{htmlPath: String, viewType?: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions

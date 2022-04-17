@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const { utils } = require('../vscode/vscode.utils');
+const { utils } = require('../vscode/webview.utils');
 const { EGWebViewPanel, EGWebViewView } = require('./e.g.webview');
 
 const name = 'Example';

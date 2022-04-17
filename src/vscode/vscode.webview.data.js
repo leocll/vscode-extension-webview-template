@@ -1,5 +1,5 @@
 /**
- * @template T object
+ * @template T
  * - Bridge the data between `vscode` and `web`
  * @class WebviewData
  */

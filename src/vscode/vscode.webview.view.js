@@ -2,9 +2,9 @@ const vscode = require('vscode');
 const os = require('os');
 const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
-const { Message, Handler } = require('./vscode.webview.message');
+const { Message } = require('./vscode.webview.message');
+const { WebviewHandler } = require('./vscode.webview.handler');
 const { WebviewData, WebviewDataApi } = require('./vscode.webview.data');
-// const { VscodeApi, VscodeContextApi } = require('./vscode.webview.api');
 
 /**
  * @typedef {import('./vscode.webview.message').PostMessageObject} PostMessageObject
@@ -18,7 +18,7 @@ const { WebviewData, WebviewDataApi } = require('./vscode.webview.data');
 class Webview {
     /**
      * Creates an instance of Webview.
-     * @param {{name: String, data?: T|WebviewData<T>, handler?: Handler}} options
+     * @param {{name: String, data?: T|WebviewData<T>, handler?: WebviewHandler}} options
      * @memberof Webview
      */
     constructor(options) {
@@ -68,10 +68,10 @@ class Webview {
     }
 
     /**
-     * @param {Handler} handler
+     * @param {WebviewHandler} handler
      */
      _setupHandler(handler) {
-        this._handler = handler || new Handler();
+        this._handler = handler || new WebviewHandler();
         this.handler.addApi(this.dataApi.api);
     }
 
@@ -115,7 +115,7 @@ class Webview {
         // @ts-ignore
         this.data.update(data, false);
         this.events.onDidPose && this.events.onDidPose(uri);
-        console.log(`Webview(${this.name}) did dispose.`);
+        console.log(`Webview(${this.name}) did pose.`);
     }
 
     /**
@@ -135,7 +135,7 @@ class Webview {
      */
     _didChangeViewState(state) {
         this.events.onDidChangeViewState && this.events.onDidChangeViewState(state);
-        console.log(`Webview(${this.name}) did changeView state.`);
+        console.log(`Webview(${this.name}) did change view state.`);
     }
 
     /**
@@ -144,7 +144,7 @@ class Webview {
      */
     _didChangeVisibility() {
         this.events.onDidChangeVisibility && this.events.onDidChangeVisibility();
-        console.log(`Webview(${this.name}) did changeView state.`);
+        console.log(`Webview(${this.name}) did visibility.`);
     }
 
     /**
@@ -329,7 +329,7 @@ class WebviewPanel extends Webview {
 /**
  * @typedef {vscode.WebviewOptions} WebviewViewOptions
  * @typedef {{htmlPath: String} & WebviewViewOptions} ShowWebviewViewOptions
- * @typedef {{viewId: String} & ShowWebviewViewOptions} RegisterWebviewViewOptions
+ * @typedef {{viewId: String, retainContextWhenHidden?: Boolean} & ShowWebviewViewOptions} RegisterWebviewViewOptions
  */
 /**
  * @template T
@@ -412,8 +412,13 @@ class WebviewPanel extends Webview {
     register(context, options) {
         this._extensionContext = context;
         this._options = options;
+        const retainContextWhenHidden = typeof options.retainContextWhenHidden === 'boolean' ? options.retainContextWhenHidden : true;
         context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(options.viewId, this),
+            vscode.window.registerWebviewViewProvider(options.viewId, this, {
+                webviewOptions: {
+                    retainContextWhenHidden,
+                }
+            }),
         );
         return this;
     }

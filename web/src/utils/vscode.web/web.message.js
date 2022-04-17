@@ -92,7 +92,7 @@ function MessageCenter(poster) {
      * @type {(message: Message) => MessageCenter}
      */
     this.emit = (message) => {
-        console.log(`Received message：${message.cmd}`);
+        console.log(`Received message: ${message.cmd}`);
         console.log(message.data);
         if (!message || !message.cmd || !this.handlers || !this.handlers[message.cmd]) {
             console.log(`Not Found message: ${message.cmd}\n`);

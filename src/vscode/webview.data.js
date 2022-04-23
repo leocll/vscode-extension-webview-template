@@ -97,9 +97,14 @@ class WebviewData {
     //     return this;
     // };
 }
-
 /**
+ * @typedef {import('./webview.api').WebviewApi} WebviewApi
+ */
+/**
+ * Webview api for webview data
  * @template T
+ * @class WebviewDataApi
+ * @extends WebviewApi
  */
  class WebviewDataApi {
     /**

@@ -10,21 +10,26 @@ const vscode = require('vscode');
 /**
  * @template A
  * @template R
- * @typedef {(args: A) => R} WebviewSyncApi
+ * @typedef {(args: A) => R} WebviewSyncFunction
  */
 /**
  * @template A
  * @template R
- * @typedef {(args: A) => Promise<R>} WebviewAsyncApi
+ * @typedef {(args: A) => Promise<R>} WebviewAsyncFunction
  */
 /**
  * @template A
  * @template R
- * @typedef {WebviewSyncApi<A, R>|WebviewAsyncApi<A, R>} WebviewApi
+ * @typedef {WebviewSyncFunction<A, R>|WebviewAsyncFunction<A, R>} WebviewFunction
+ */
+/**
+ * @typedef {Object} WebviewApi
+ * @property {{[x: String]: WebviewFunction<any, any>}} api
  */
 /**
  * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
  * @class WebviewVscodeApi
+ * @extends WebviewApi
  */
 class WebviewVscodeApi {
     /**
@@ -35,14 +40,14 @@ class WebviewVscodeApi {
         this.api = {
             /**
              * Get workspace file
-             * @type {WebviewSyncApi<void, String>}
+             * @type {WebviewSyncFunction<void, String>}
              */
             getWorkspaceFile: () => {
                 return vscode.workspace.workspaceFile && vscode.workspace.workspaceFile.fsPath;
             },
             /**
              * Get workspace folders
-             * @type {WebviewSyncApi<void, WorkspaceFolder[]>}
+             * @type {WebviewSyncFunction<void, WorkspaceFolder[]>}
              */
             getWorkspaceFolders: () => {
                 return vscode.workspace.workspaceFolders.map(wf => {
@@ -51,14 +56,14 @@ class WebviewVscodeApi {
             },
             /**
              * Update workspace folders
-             * @type {WebviewSyncApi<{start: number, deleteCount: number, add?: AddWorkspaceFolder[]}, Boolean>}
+             * @type {WebviewSyncFunction<{start: number, deleteCount: number, add?: AddWorkspaceFolder[]}, Boolean>}
              */
             updateWorkspaceFolders: ({ start, deleteCount, add = undefined}) => {
                 return vscode.workspace.updateWorkspaceFolders(start, deleteCount, ...(add || []).map(wf => { return {name: wf.name, uri: vscode.Uri.file(wf.uri)}; }));
             },
             /**
              * Find file in current workspace
-             * @type {WebviewAsyncApi<{include: string, exclude?: string}, string[]>}
+             * @type {WebviewAsyncFunction<{include: string, exclude?: string}, string[]>}
              */
             findFileInWorkspace: async ({ include, exclude = undefined }) => {
                 try {
@@ -71,14 +76,14 @@ class WebviewVscodeApi {
             },
             /**
              * Get current platform
-             * @type {WebviewSyncApi<void, Platform>}
+             * @type {WebviewSyncFunction<void, Platform>}
              */
             getPlatform: () => {
                 return os.platform();
             },
             /**
              * Show message alert
-             * @type {WebviewAsyncApi<{txt: string, btns?: string[]}, string>}
+             * @type {WebviewAsyncFunction<{txt: string, btns?: string[]}, string>}
              */
             showMessage: async ({ txt, btns = undefined }) => {
                 txt = `[${this.name}] ${txt}`;
@@ -86,7 +91,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show error alert
-             * @type {WebviewAsyncApi<{txt: string, btns?: string[]}, string>}
+             * @type {WebviewAsyncFunction<{txt: string, btns?: string[]}, string>}
              */
             showError: async ({ txt, btns = undefined }) => {
                 txt = `[${this.name}] ${txt}`;
@@ -94,7 +99,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show warn alert
-             * @type {WebviewAsyncApi<{txt: string, btns?: string[]}, string>}
+             * @type {WebviewAsyncFunction<{txt: string, btns?: string[]}, string>}
              */
             showWarn: async ({ txt, btns = undefined }) => {
                 txt = `[${this.name}] ${txt}`;
@@ -102,7 +107,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show Input Box
-             * @type {WebviewAsyncApi<vscode.InputBoxOptions, string>}
+             * @type {WebviewAsyncFunction<vscode.InputBoxOptions, string>}
              */
             showInputBox: async (options) => {
                 /**@type {vscode.InputBoxOptions} */
@@ -128,7 +133,7 @@ class WebviewVscodeApi {
              * @property {string} defaultUri default open path
              * @property {{[name: string]: string[]}} filters e.g.: `{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}`
              * @property {string} openLabel button label, default: `open`
-             * @type {WebviewAsyncApi<showOpenDialogOptions, string[]>}
+             * @type {WebviewAsyncFunction<showOpenDialogOptions, string[]>}
              */
             showOpenDialog: async (options) => {
                 // filters:undefined, // 筛选器，例如：{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}
@@ -150,7 +155,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show save dialog, select a local file path
-             * @type {WebviewAsyncApi<{defaultUri?: string, filters?: {string: string[]}, saveLabel?: string}, string>}
+             * @type {WebviewAsyncFunction<{defaultUri?: string, filters?: {string: string[]}, saveLabel?: string}, string>}
              * @property filters e.g.: `{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}`
              */
             showSaveDialog: async ({ defaultUri = undefined, filters = undefined, saveLabel = undefined }) => {
@@ -163,7 +168,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show pick dialog
-             * @type {WebviewAsyncApi<{items: string[]|Promise<string[]>, canPickMany?: boolean, ignoreFocusOut?: boolean, matchOnDescription?: boolean, matchOnDetail?: boolean, placeHolder?: string}, string>}
+             * @type {WebviewAsyncFunction<{items: string[]|Promise<string[]>, canPickMany?: boolean, ignoreFocusOut?: boolean, matchOnDescription?: boolean, matchOnDetail?: boolean, placeHolder?: string}, string>}
              */
             showQuickPick: async ({ items, canPickMany = false, ignoreFocusOut = true, matchOnDescription = true, matchOnDetail = true, placeHolder = undefined }) => {
                 const options = {};
@@ -176,7 +181,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show file
-             * @type {WebviewAsyncApi<{filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean, revealRange?: {startLine?: Number, endLine?: Number}, revealType?: vscode.TextEditorRevealType}, void>}
+             * @type {WebviewAsyncFunction<{filePath: string, viewColumn?: number, preserveFocus?: boolean, preview?: boolean, revealRange?: {startLine?: Number, endLine?: Number}, revealType?: vscode.TextEditorRevealType}, void>}
              */
             showTextDocument: async ({ filePath, viewColumn = undefined, preserveFocus = false, preview = false, revealRange = undefined, revealType = vscode.TextEditorRevealType.Default }) => {
                 try {
@@ -210,7 +215,7 @@ class WebviewVscodeApi {
             },
             /**
              * Show txt to output channel
-             * @type {WebviewSyncApi<{txt: string, preserveFocus?: boolean, line?: boolean, show?: boolean}, void>}
+             * @type {WebviewSyncFunction<{txt: string, preserveFocus?: boolean, line?: boolean, show?: boolean}, void>}
              */
             showTxt2Output: ({ txt, preserveFocus = true, line = true, show = true }) => {
                 const outputChannel = this.outputChannel;
@@ -229,7 +234,7 @@ class WebviewVscodeApi {
             },
             /**
              * Send cmd to terminal
-             * @type {WebviewSyncApi<{cmd: string, addNewLine?: boolean, preserveFocus?: boolean}, void>}
+             * @type {WebviewSyncFunction<{cmd: string, addNewLine?: boolean, preserveFocus?: boolean}, void>}
              */
             sendCmd2Terminal: ({ cmd, addNewLine = true, preserveFocus = false }) => {
                 const terminal = this.terminal;
@@ -243,14 +248,14 @@ class WebviewVscodeApi {
             /***************************** File System *****************************/
             /**
              * a File or folder if exists
-             * @type {WebviewSyncApi<{path: string}, Boolean>}
+             * @type {WebviewSyncFunction<{path: string}, Boolean>}
              */
             exists4Path: ({ path }) => {
                 return fs.existsSync(path);
             },
             /**
              * Get stat for path
-             * @type {WebviewSyncApi<{path: string}, {error?: string, data?: {isFile: boolean, isDirectory: boolean, isSymbolicLink: boolean}}>}
+             * @type {WebviewSyncFunction<{path: string}, {error?: string, data?: {isFile: boolean, isDirectory: boolean, isSymbolicLink: boolean}}>}
              */
             getStat4Path: ({ path }) => {
                 try {
@@ -273,7 +278,7 @@ class WebviewVscodeApi {
             },
             /**
              * Read file
-             * @type {WebviewSyncApi<{path: string, options?: 'hex'|'json'|'string'}, {error?: string, data?: any}>}
+             * @type {WebviewSyncFunction<{path: string, options?: 'hex'|'json'|'string'}, {error?: string, data?: any}>}
              */
             readFile: ({ path, options = undefined }) => {
                 try {
@@ -296,7 +301,7 @@ class WebviewVscodeApi {
             },
             /**
              * Write file
-             * @type {WebviewAsyncApi<{path: string, data: string|Array|object, options?: fs.WriteFileOptions}, {error?: string}>}
+             * @type {WebviewAsyncFunction<{path: string, data: string|Array|object, options?: fs.WriteFileOptions}, {error?: string}>}
              */
             writeFile: ({ path, data, options = undefined }) => {
                 return new Promise((resolve) => {
@@ -308,7 +313,7 @@ class WebviewVscodeApi {
             },
             /**
              * Request
-             * @type {WebviewAsyncApi<{url: string, method?: string, data?: {[x: string]: any}, headers?: {[x: string]: string|number}}, {error?: string, body: any, statusCode: number, statusMessage: string}>}
+             * @type {WebviewAsyncFunction<{url: string, method?: string, data?: {[x: string]: any}, headers?: {[x: string]: string|number}}, {error?: string, body: any, statusCode: number, statusMessage: string}>}
              */
             request: ({ url, method = 'POST', data = undefined, headers = { "content-type": "application/json" } }) => {
                 return new Promise((resolve) => {
@@ -343,6 +348,7 @@ class WebviewVscodeApi {
  * Communication Api from `web` to `vscode`, `api` name same to `ReceivedMessageObject.cmd`
  * @template T
  * @class WebviewVscodeContextApi
+ * @extends WebviewApi
  */
 class WebviewVscodeContextApi {
     /**
@@ -354,28 +360,28 @@ class WebviewVscodeContextApi {
         this.api = {
             /**
              * Get extension path
-             * @type {WebviewSyncApi<void, string>}
+             * @type {WebviewSyncFunction<void, string>}
              */
             getExtensionPath: () => {
                 return this.context.extensionPath;
             },
             /**
              * Get storage path
-             * @type {WebviewSyncApi<void, string>}
+             * @type {WebviewSyncFunction<void, string>}
              */
             getStoragePath: () => {
                 return this.context.storagePath || this.context.storageUri.fsPath;
             },
             /**
              * Get global storage path
-             * @type {WebviewSyncApi<void, string>}
+             * @type {WebviewSyncFunction<void, string>}
              */
             getGlobalStoragePath: () => {
                 return this.context.globalStoragePath || this.context.globalStorageUri.fsPath;
             },
             /**
              * Get workspace state
-             * @type {WebviewSyncApi<void, T>}
+             * @type {WebviewSyncFunction<void, T>}
              */
             getWorkspaceState: () => {
                 // @ts-ignore
@@ -385,7 +391,7 @@ class WebviewVscodeContextApi {
             },
             /**
              * Update workspace state
-             * @type {WebviewSyncApi<T, void>}
+             * @type {WebviewSyncFunction<T, void>}
              */
             updateWorkspaceState: (states) => {
                 Object.entries(states).forEach(([key, value]) => {
@@ -394,7 +400,7 @@ class WebviewVscodeContextApi {
             },
             /**
              * Get global state
-             * @type {WebviewSyncApi<void, T>}
+             * @type {WebviewSyncFunction<void, T>}
              */
             getGlobalState: () => {
                 // @ts-ignore
@@ -404,7 +410,7 @@ class WebviewVscodeContextApi {
             },
             /**
              * Update global state
-             * @type {WebviewSyncApi<T, void>}
+             * @type {WebviewSyncFunction<T, void>}
              */
             updateGlobalState: (states) => {
                 Object.entries(states).forEach(([key, value]) => {
@@ -413,7 +419,7 @@ class WebviewVscodeContextApi {
             },
             /**
              * Get merged state, `Object.assign(globalState, workspaceState)`
-             * @type {WebviewSyncApi<void, T>}
+             * @type {WebviewSyncFunction<void, T>}
              */
             getMergedState: () => {
                 const globalState = this.api.getGlobalState();

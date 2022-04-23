@@ -4,8 +4,8 @@ import MessageCenter from './web.message';
  * @typedef {import('./web.message').Message} Message - Message
  * @typedef {{postMessage: (msg: Message) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
  * 
- * @typedef {import('../../../../src/vscode/vscode.webviewApi').WorkspaceFolder} WorkspaceFolder
- * @typedef {import('../../../../src/vscode/vscode.webviewApi').AddWorkspaceFolder} AddWorkspaceFolder
+ * @typedef {import('../../../../src/vscode/webview.api').WorkspaceFolder} WorkspaceFolder
+ * @typedef {import('../../../../src/vscode/webview.api').AddWorkspaceFolder} AddWorkspaceFolder
  */
 /**
  * Vscode api for web

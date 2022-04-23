@@ -7,8 +7,12 @@ const { WebviewHandler } = require('./webview.handler');
 const { WebviewData, WebviewDataApi } = require('./webview.data');
 
 /**
+ * @typedef {import('./webview.api').WebviewApi} WebviewApi
  * @typedef {import('./webview.message').PostMessageObject} PostMessageObject
  * @typedef {import('./webview.message').ReceivedMessageObject} ReceivedMessageObject
+ */
+/**
+ * @typedef {{id: String, name: String, htmlPath: String}} WebviewOptions
  */
 /**
  * Webview
@@ -18,11 +22,12 @@ const { WebviewData, WebviewDataApi } = require('./webview.data');
 class Webview {
     /**
      * Creates an instance of Webview.
-     * @param {{name: String, data?: T|WebviewData<T>, handler?: WebviewHandler}} options
+     * @param {WebviewOptions & {data?: T|WebviewData<T>, handler?: WebviewHandler}} options
      * @memberof Webview
      */
     constructor(options) {
-        this.name = options.name;
+        this._options = options;
+        this._apis = new Set();
         this._setupData(options.data);
         this._setupHandler(options.handler);
         this._events = {
@@ -43,6 +48,10 @@ class Webview {
         this._extensionContext = undefined;
     }
 
+    // get options() { return this._options; }
+    get id() { return this._options.id; }
+    get name() { return this._options.name; }
+    get htmlPath() { return this._options.htmlPath; }
     /**@type {WebviewData<T & DefaultWebviewData>} */
     // @ts-ignore
     get data() { return this._data; }
@@ -50,6 +59,8 @@ class Webview {
     // @ts-ignore
     get dataApi() { return this._dataApi; }
     get handler() { return this._handler; }
+    /**@type {ReadonlySet<WebviewApi>} */
+    get apis() { return this._apis; }
     get events() { return this._events; }
     get view() { return this._view; }
     get extensionContext() { return this._extensionContext; }
@@ -70,9 +81,24 @@ class Webview {
     /**
      * @param {WebviewHandler} handler
      */
-     _setupHandler(handler) {
+    _setupHandler(handler) {
         this._handler = handler || new WebviewHandler();
-        this.handler.addApi(this.dataApi.api);
+        this.addApi(this.dataApi);
+    }
+
+    /**
+     * Add webview api
+     * @param {WebviewApi[]} apis
+     * @memberof Webview
+     */
+    addApi(...apis) {
+        apis.forEach(a => {
+            if (!this._apis.has(a)) {
+                this._apis.add(a);
+                this.handler.addApi(a.api);
+            }
+        });
+        return this;
     }
 
     /**
@@ -124,6 +150,7 @@ class Webview {
      */
     _didDispose() {
         this._view = undefined;
+        this._extensionContext = undefined;
         this.events.onDidDispose && this.events.onDidDispose();
         console.log(`Webview(${this.name}) did dispose.`);
     }
@@ -233,14 +260,27 @@ class Webview {
         const html1 = htmlparser2.DomUtils.getInnerHTML(doc);
         return html1;
     }
+
+    /**
+     * Register
+     * @abstract
+     * @param {vscode.ExtensionContext} context
+     * @param {any} [options=undefined]
+     * @returns {this}
+     * @memberof WebviewView
+     */
+    // eslint-disable-next-line no-unused-vars
+    register(context, options=undefined) { throw new Error('Unimplemented interface'); }
 }
 
 /**
  * @typedef {import('./webview.api').WorkspaceFolder} WorkspaceFolder
  * @typedef {{startPath?: String, platform: NodeJS.Platform, pathSep: String, extensionPath: String, workspaceFile?: String, workspaceFolders: WorkspaceFolder[]}} DefaultWebviewData
+ */
+/**
  * @typedef {{viewColumn?: vscode.ViewColumn, preserveFocus?: Boolean} & vscode.WebviewPanelOptions & vscode.WebviewOptions} WebviewPanelOptions
- * @typedef {{htmlPath: String, viewType?: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions
- * @typedef {{command: String} & ShowWebviewPanelOptions} RegisterWebviewPanelOptions
+ * @typedef {{viewType?: String, title?: String} & WebviewPanelOptions} ShowWebviewPanelOptions
+ * @typedef {WebviewOptions & ShowWebviewPanelOptions} RegisterWebviewPanelOptions
  */
 /**
  * WebviewPanel
@@ -258,14 +298,15 @@ class WebviewPanel extends Webview {
     /**
      * Register
      * @param {vscode.ExtensionContext} context
-     * @param {RegisterWebviewPanelOptions} options
+     * @param {ShowWebviewPanelOptions} [options=undefined]
      * @returns {this}
      * @memberof WebviewPanel
      */
-    register(context, options) {
+    register(context, options=undefined) {
+        options = options || {};
         this._extensionContext = context;
         context.subscriptions.push(
-            vscode.commands.registerCommand(options.command, (uri) => {
+            vscode.commands.registerCommand(this.id, (uri) => {
                 this._show(context, options);
                 this._didPose(uri);
             })
@@ -284,10 +325,9 @@ class WebviewPanel extends Webview {
             this.panel.reveal(options.viewColumn || vscode.ViewColumn.Three);
             return;
         }
-        const htmlPath = options.htmlPath;
+        const htmlPath = this.htmlPath;
         /**@type {ShowWebviewPanelOptions} - default options */
         const opts = {
-            htmlPath,
             viewType: this.name,
             title: this.name,
             viewColumn: vscode.ViewColumn.Three,
@@ -328,8 +368,8 @@ class WebviewPanel extends Webview {
 
 /**
  * @typedef {vscode.WebviewOptions} WebviewViewOptions
- * @typedef {{htmlPath: String} & WebviewViewOptions} ShowWebviewViewOptions
- * @typedef {{viewId: String, retainContextWhenHidden?: Boolean} & ShowWebviewViewOptions} RegisterWebviewViewOptions
+ * @typedef {{retainContextWhenHidden?: Boolean} & WebviewViewOptions} ShowWebviewViewOptions
+ * @typedef {WebviewOptions & ShowWebviewViewOptions} RegisterWebviewViewOptions
  */
 /**
  * WebviewView
@@ -338,22 +378,25 @@ class WebviewPanel extends Webview {
  * @extends {Webview<T>}
  * @implements {vscode.WebviewViewProvider}
  */
- class WebviewView extends Webview {
+class WebviewView extends Webview {
 
     /**@type {vscode.WebviewView} */
     // @ts-ignore
     get webviewView() { return this.view; }
     set webviewView(v) { this._view = v; }
     get viewContext() { return this._webviewContext; }
+    get cancellationToken() { return this._token; }
 
     _didDispose() {
         super._didDispose();
+        this._webviewContext = undefined;
+        this._token = undefined;
         (this._disposables || []).forEach(e => {
             e.dispose();
         });
     }
 
-     /**
+    /**
      * Resolve webview view
      * @param {vscode.WebviewView} webviewView 
      * @param {vscode.WebviewViewResolveContext} context 
@@ -375,12 +418,12 @@ class WebviewPanel extends Webview {
     }
 
     /**
-     * show
+     * Show
      * @memberof WebviewView
      */
-     _show() {
-        const options = this._options;
-        const htmlPath = options.htmlPath;
+    _show() {
+        const options = this._show_options;
+        const htmlPath = this.htmlPath;
         /**@type {WebviewViewOptions} - default options */
         const opts = {
             enableScripts: true,
@@ -405,16 +448,17 @@ class WebviewPanel extends Webview {
     /**
      * Register
      * @param {vscode.ExtensionContext} context
-     * @param {RegisterWebviewViewOptions} options
+     * @param {ShowWebviewViewOptions} [options=undefined]
      * @returns {this}
      * @memberof WebviewView
      */
-    register(context, options) {
+    register(context, options=undefined) {
+        options = options || {};
         this._extensionContext = context;
-        this._options = options;
+        this._show_options = options;
         const retainContextWhenHidden = typeof options.retainContextWhenHidden === 'boolean' ? options.retainContextWhenHidden : true;
         context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(options.viewId, this, {
+            vscode.window.registerWebviewViewProvider(this.id, this, {
                 webviewOptions: {
                     retainContextWhenHidden,
                 }
@@ -422,7 +466,7 @@ class WebviewPanel extends Webview {
         );
         return this;
     }
- }
+}
 
 module.exports = {
     Webview,

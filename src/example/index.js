@@ -1,9 +1,10 @@
 const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
 const vscode = require('vscode');
-const { utils } = require('../vscode/extension.utils');
+const { ExtensionUtils } = require('../vscode/extension.utils');
 const { EGWebViewPanel, EGWebViewView } = require('./e.g.webview');
 
 const name = 'Example';
+const utils = new ExtensionUtils();
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -36,6 +37,7 @@ const deactivate = () => {
 
 module.exports = {
     name,
+    utils,
     activate,
     deactivate
 };

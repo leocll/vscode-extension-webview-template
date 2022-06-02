@@ -418,10 +418,10 @@ class WebviewVscodeContextApi {
                 });
             },
             /**
-             * Get merged state, `Object.assign(globalState, workspaceState)`
+             * Get extension state, `Object.assign(globalState, workspaceState)`
              * @type {WebviewSyncFunction<void, T>}
              */
-            getMergedState: () => {
+            getExtensionState: () => {
                 const globalState = this.api.getGlobalState();
                 const workspaceState = this.api.getWorkspaceState();
                 return Object.assign(globalState, workspaceState);

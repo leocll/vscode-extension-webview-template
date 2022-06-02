@@ -56,25 +56,6 @@ class ExtensionUtils {
     }
 }
 
-const _utils = new ExtensionUtils();
-/**
- * - `ExtensionUtils` singleton
- * @template T
- * @type {ExtensionUtils<T>}
- */
-const utils = new Proxy(_utils, {});
-/**
- * - set `ExtensionUtils` singleton
- * @param {ExtensionUtils<any>} v
- */
-const setUtils = (v) => {
-    if (_utils.activated) {
-        throw new Error(`Please call me before calling 'activate'`);
-    }
-    Object.assign(v, _utils);
-};
 module.exports = {
     ExtensionUtils,
-    utils,
-    setUtils,
 };

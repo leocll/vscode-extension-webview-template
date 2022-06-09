@@ -106,7 +106,7 @@ class WebviewData {
  * @class WebviewDataApi
  * @extends WebviewApi
  */
- class WebviewDataApi {
+class WebviewDataApi {
     /**
      * @param {WebviewData<T>} data 
      */

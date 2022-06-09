@@ -7,7 +7,15 @@ const { WebviewPanel, WebviewView } = require('../vscode/webview.view');
  * @extends {WebviewPanel<T>}
  */
 class EGWebViewPanel extends WebviewPanel {
-    //
+    _setupHandler(handler) {
+        super._setupHandler(handler);
+        // webview business api
+        // this.addApi({
+        //     api: {
+        //         // 
+        //     }
+        // });
+    }
 }
 
 /**
@@ -17,7 +25,15 @@ class EGWebViewPanel extends WebviewPanel {
  * @extends {WebviewView<T>}
  */
 class EGWebViewView extends WebviewView {
-    //
+    _setupHandler(handler) {
+        super._setupHandler(handler);
+        // webview business api
+        // this.addApi({
+        //     api: {
+        //         // 
+        //     }
+        // });
+    }
 }
 
 module.exports = {

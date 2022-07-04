@@ -32,6 +32,16 @@
 				"<node_internals>/**"
 			],
 			"type": "pwa-node"
+		},
+		{
+			"name": "Test tsserver",
+			"program": "${workspaceFolder}/test/tsserver.js",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "pwa-node",
+			"cwd": "${workspaceFolder}"
 		}
 	]
 }

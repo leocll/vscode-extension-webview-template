@@ -1,7 +1,11 @@
 /**
  * @typedef {{cmd: string, args?: {[name: string]: any}, reply?: boolean, p2p?: boolean, timeout?: number}} CMD - Post cmd
- * @typedef {CMD & {data: any}} Message - Message
+ * @typedef {Message<any> & {index?: number}} _Message
  * @typedef {import('./web.vscode').VscodeOrigin} VscodeOrigin - Origin vscodeApi
+ */
+/**
+ * @template T
+ * @typedef {CMD & {data: T}} Message - Message
  */
 /**
  * Message center
@@ -14,7 +18,7 @@ function MessageCenter(poster) {
     /**
      * On received message
      * @type {(event: MessageEvent) => void}
-     * @typedef {{data: Message}} MessageEvent
+     * @typedef {{data: _Message}} MessageEvent
      */
     this.received = event => {
         const message = event.data;
@@ -23,7 +27,7 @@ function MessageCenter(poster) {
 
     /**
      * Post message
-     * @type {({cmd, args, reply, p2p, timeout}: CMD, ext?: {[name: string]: any}) => Promise<Message>|undefined}
+     * @type {({cmd, args, reply, p2p, timeout}: CMD, ext?: {[name: string]: any}) => Promise<_Message>|undefined}
      */
     this.post = ({ cmd, args = undefined, reply = true, p2p = true, timeout = 0 }, ext = {}) => {
         ext.cmd = cmd;
@@ -40,6 +44,7 @@ function MessageCenter(poster) {
                 };
                 try {
                     const ff = () => {
+                        // @ts-ignore
                         p2p && (f.index = this.index);
                         this.on(cmd, f);
                         timeout > 0 && setTimeout(() => {
@@ -49,7 +54,9 @@ function MessageCenter(poster) {
                         }, timeout);
                     };
                     const promise = poster && poster.postMessage && poster.postMessage(ext);
+                    // @ts-ignore
                     if (promise && promise.then) {
+                        // @ts-ignore
                         promise.then((err) => {
                             if (err) {
                                 ext.data = { status: 0, description: err ? (err.message || err.toString()) : 'Unknown error.' };
@@ -73,11 +80,12 @@ function MessageCenter(poster) {
 
     /**
      * Subscribe message. `times`: times of receiving message, `times = 0`: always receive.
-     * @type {(cmd: string, handler: (msg: Message) => void, times=1) => MessageCenter}
+     * @type {(cmd: string, handler: (msg: _Message) => void, times?: number) => MessageCenter}
      */
     this.on = (cmd, handler, times = 1) => {
         if (handler && typeof handler === 'function') {
             times === 0 && (times = -1); // `-1`: always receive, `0`: clear the handler  
+            // @ts-ignore
             handler.times = times;
         } else {
             return this;
@@ -89,7 +97,7 @@ function MessageCenter(poster) {
 
     /**
      * Emit message
-     * @type {(message: Message) => MessageCenter}
+     * @type {(message: _Message) => MessageCenter}
      */
     this.emit = (message) => {
         console.log(`Received message: ${message.cmd}`);
@@ -122,7 +130,7 @@ function MessageCenter(poster) {
 
     /**
      * Remove message handler
-     * @type {(cmd: string, handler: (message: Message) => {}) => MessageCenter}
+     * @type {(cmd: string, handler: (message: _Message) => any) => MessageCenter}
      */
     this.off = (cmd, handler) => {
         var hs = this.handlers[cmd];

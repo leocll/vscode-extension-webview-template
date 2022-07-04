@@ -98,6 +98,7 @@
         "@types/mocha": "^2.2.42",
         "@types/node": "^10.12.21",
         "@types/vscode": "^1.50.0",
+        "@typescript/server-harness": "^0.1.4",
         "eslint": "^5.13.0",
         "typescript": "^3.3.1"
     },

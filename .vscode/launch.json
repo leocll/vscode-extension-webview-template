@@ -34,8 +34,18 @@
 			"type": "pwa-node"
 		},
 		{
-			"name": "Test tsserver",
-			"program": "${workspaceFolder}/test/tsserver.js",
+			"name": "Test Api File Parse",
+			"program": "${workspaceFolder}/test/ApiFile.parse.test.js",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "pwa-node",
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "Gen JsDoc for Api File",
+			"program": "${workspaceFolder}/test/ApiFile.genJsDoc.js",
 			"request": "launch",
 			"skipFiles": [
 				"<node_internals>/**"

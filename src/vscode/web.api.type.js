@@ -48,4 +48,10 @@
  * @property {(items: T) => Promise<void>} updateWebviewData
  */
 
+/**
+ * @template T0
+ * @template T1
+ * @typedef {WebVscodeApi & WebVscodeContextApi<T0> & WebDataApi<T1>} WebApi
+ */
+
 export {};

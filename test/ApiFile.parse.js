@@ -2,7 +2,7 @@ const path = require('path');
 const ts = require('typescript/lib/tsserverlibrary');
 
 /**
- * @typedef {{name: String, classNames: String[], getDocName: (className: String) => String}} ApiFile
+ * @typedef {{name: String, classNames: String[], getDocName?: (className: String) => String}} ApiFile
  * @typedef {{name: String, type: {name: String, args: String[]}}} Api
  * @typedef {{file: String, classTemplates: String[], className: String, docName: String, apis: Api[]}} ApiClass
  * @typedef {{target: ApiFile, getText: (pos: number, end?: number) => String}} ParseOptions
@@ -62,7 +62,7 @@ function parseClass(cls, options) {
                                     if (left.name.escapedText === 'api' && right.kind === ts.SyntaxKind.ObjectLiteralExpression) {
                                         const className = cls.name.escapedText;
                                         // @ts-ignore
-                                        return {file: file.name, classTemplates, className, docName: file.getDocName(className), apis: right.properties.map(p => parseApi(p, options))};
+                                        return {file: file.name, classTemplates, className, docName: file.getDocName ? file.getDocName(className) : className, apis: right.properties.map(p => parseApi(p, options))};
                                     }
                                 }
                             }

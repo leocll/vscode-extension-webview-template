@@ -4,14 +4,6 @@ import MessageCenter from './web.message';
  * @typedef {import('./web.message').CMD} CMD - CMD
  * @typedef {import('./web.message').Message<any>} Message - Message
  * @typedef {{postMessage: (msg: CMD) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
- * 
- * @typedef {import('../../../../src/vscode/webview.api').WorkspaceFolder} WorkspaceFolder
- * @typedef {import('../../../../src/vscode/webview.api').AddWorkspaceFolder} AddWorkspaceFolder
- */
-/**
- * @template T0
- * @template T1
- * @typedef {import('../../../../src/vscode/web.api').WebApi<T0, T1>} WebApi
  */
 
 class VscodeBase {
@@ -93,8 +85,6 @@ class VscodeBaseOn extends VscodeBase {
 
 /**
  * Vscode api for web
- * @template T0
- * @template T1
  * @class Vscode
  */
 class Vscode extends VscodeBase {
@@ -103,60 +93,14 @@ class Vscode extends VscodeBase {
      */
     constructor(msgCenter=undefined) {
         super(msgCenter);
-        /**@type {VscodeBaseApi & WebApi<T0, T1>} */
-        // @ts-ignore
-        this.$api = new Proxy(new VscodeBaseApi(this.$messageCenter), {
-            get(target, property, receiver) {
+        return new Proxy(this, {
+            get: (target, property, receiver) => {
                 const v = Reflect.get(target, property);
                 // @ts-ignore
-                return v === undefined ? (data) => target.post({ cmd: property, args: data, reply: true }) : v;
-            }
-        });
-        this.$on = new Proxy(new VscodeBaseOn(this.$messageCenter), {
-            get(target, property, receiver) {
-                const v = Reflect.get(target, property);
-                // @ts-ignore
-                return v === undefined ? (callBack, times = 1) => target.on(property, callBack, times) : v;
+                return v === undefined ? (data) => this.$messageCenter.post({ cmd: property, args: data, reply: true }) : v;
             }
         });
     }
-
-    // // Lift Cycle
-    // onWebviewDidPose(callBack) { // init webview
-    //     this.on(`webviewDidPose`, callBack, 1);
-    //     return this;
-    // }
-
-    // // onwebviewDidDispose(callBack) { // dismiss webview
-    // //     this.on(`webviewDidDispose`, callBack, 1);
-    // //     return this;
-    // // }
-    // // onwebviewDidChangeViewState(callBack, times=1) {
-    // //     this.on(`webviewDidChangeViewState`, callBack, times);
-    // //     return this;
-    // // }
-
-    // /**
-    //  * On received message of sync webview data
-    //  * @param {(msg: Message) => void} callBack
-    //  * @param {number} times
-    //  * @memberof Vscode
-    //  */
-    // onSyncWebviewData = (callBack, times = 1) => {
-    //     this.on(`syncWebviewData`, callBack, times);
-    //     return this;
-    // }
-
-    // /**
-    //  * On received message of workspace folders changed
-    //  * @param {(msg: Message) => void} callBack
-    //  * @param {number} times
-    //  * @memberof Vscode
-    //  */
-    // onDidChangeWorkspaceFolders = (callBack, times = 1) => {
-    //     this.on(`onDidChangeWorkspaceFolders`, callBack, times);
-    //     return this;
-    // }
 }
 
 export {

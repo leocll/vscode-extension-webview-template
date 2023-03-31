@@ -5,35 +5,16 @@ import MessageCenter from './web.message';
  * @typedef {import('./web.message').Message<any>} Message - Message
  * @typedef {{postMessage: (msg: CMD) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
  */
-/**
- * @template T0
- * @template T1
- * @typedef {import('../../../../libs/vscode-webview-api').WebViewApi<T0, T1>} WebApi
- */
 
-// @ts-ignore
-import { WebApi } from './web.api';
-import { WebViewApi } from 'webview-vscode-api';
-
-const w = new WebViewApi();
-w.
-
-/**
- * Vscode api for web
- * @template T0
- * @template T1
- * @extends {WebApi<T0, T1>}
- */
-class Vscode extends WebApi {
+class VscodeBase {
     /**
-     * @param {MessageCenter} [msgCenter=undefined]
+     * @param {MessageCenter} [msgCenter=undefined] 
      */
-    constructor(msgCenter=undefined) {
-        super();
+     constructor(msgCenter=undefined) {
         if (msgCenter) {
             this.$messageCenter = msgCenter;
         } else {
-            /**@type {VscodeOrigin} */
+            /** @type {VscodeOrigin} */
             const origin = (_ => {
                 try {
                     // @ts-ignore
@@ -78,109 +59,53 @@ class Vscode extends WebApi {
             window && window.addEventListener && window.addEventListener('message', this.$messageCenter.received);
         }
     }
+}
 
+class VscodeBaseApi extends VscodeBase {
     /**
-     * @param {MessageCenter} [msgCenter=undefined]
+     * Post message
+     * @param {CMD} msg
      */
-    static Proxy(msgCenter=undefined) {
-        const target = new this(msgCenter);
-        return new Proxy(target, target.__ProxyHandler());
-    }
-
-    /**
-     * @returns {ProxyHandler<Vscode<T0, T1>>}
-     */
-    __ProxyHandler() {
-        return {
-            get: (target, p, receiver) => {
-                const v = Reflect.get(target, p, receiver);
-                return v === undefined ? new VscodeProperty(target.$messageCenter, String(p)) : v;
-            },
-        };
+    post = (msg) => {
+        return this.$messageCenter.post(msg);
     }
 }
 
-const w = new WebApi();
-
-const v = new Vscode();
-
-class VscodeProperty {
+class VscodeBaseOn extends VscodeBase {
     /**
-     * @param {MessageCenter} center
-     * @param {string} name
-     * @param {boolean} [inOn=false]
+     * On received message
+     * @param {String} cmd
+     * @param {(msg: Message) => void} callBack
+     * @param {number} [times=1]
      */
-    constructor(center, name, inOn=false) {
-        this.__info__ = { center, name, inOn, isOn: false };
-        this.__info__.isOn = this.__isOn__();
-        // @ts-ignore
-        return new Proxy((...argArray) => this.__call__(...argArray), {
-            get: (_target, p) => {
-                return new VscodeProperty(center, `${name}.${String(p)}`, this.__info__.isOn);
-            },
-        });
-    }
-
-    __call__(...argArray) {
-        const { center, name, isOn } = this.__info__;
-        if (isOn) {
-            // @ts-ignore
-            return center.on(...argArray);
-        } else {
-            return center.post({ cmd: name, args: argArray[0], p2p: true });
-        }
-    }
-
-    __isOn__() {
-        const { name, inOn } = this.__info__;
-        return inOn || Boolean(name.split('.').find(n => n === '$on'));
+    on = (cmd, callBack, times = 1) => {
+        return this.$messageCenter.on(cmd, callBack, times);
     }
 }
 
 /**
  * Vscode api for web
- * @template T0
- * @template T1
- * @extends {Vscode<T0, T1>}
+ * @class Vscode
  */
-class VscodeProxy {
+class Vscode extends VscodeBase {
     /**
-     * @param {Vscode<T0, T1>} target
+     * @param {MessageCenter} [msgCenter=undefined] 
      */
-    constructor(target) {
-        return new Proxy(target, {
-            get: (target, p, receiver) => {
-                const v = Reflect.get(target, p, receiver);
-                return v === undefined ? new VscodeProperty(target.$messageCenter, String(p)) : v;
-            },
+    constructor(msgCenter=undefined) {
+        super(msgCenter);
+        return new Proxy(this, {
+            get: (target, property, receiver) => {
+                const v = Reflect.get(target, property);
+                // @ts-ignore
+                return v === undefined ? (data) => this.$messageCenter.post({ cmd: property, args: data, reply: true }) : v;
+            }
         });
     }
 }
 
-/**
- * @template T0
- * @template T1
- * @extends {Vscode<T0, T1>}
- * @param {Vscode<T0, T1>} target
- */
-function A(target) {
-    return new Proxy(target, {
-        get: (target, p, receiver) => {
-            const v = Reflect.get(target, p, receiver);
-            return v === undefined ? new VscodeProperty(target.$messageCenter, String(p)) : v;
-        }
-    });
-}
-
-// /**@type {WebApi<any, any>} */
-const v = new Vscode();
-
-// const vp = A(v)
-// vp.$messageCenter
-// vp.$messageCenter
-
 export {
+    VscodeBase,
+    VscodeBaseApi,
+    VscodeBaseOn,
     Vscode,
-    VscodeProperty,
-    VscodeProxy,
 };

@@ -1,0 +1,29 @@
+{
+  "name": "jsdoc-parser",
+  "description": "jsdoc parser.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leocll/vscode-extension-webview-template.git"
+  },
+  "author": "leocll <leocll@qq.com>",
+  "main": "./index.js",
+  "typings": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^3.3.1"
+  },
+  "scripts": {
+    "test": "node ./test.js"
+  },
+  "bugs": {
+    "url": "https://github.com/leocll/vscode-extension-webview-template/issues"
+  },
+  "homepage": "https://github.com/leocll/vscode-extension-webview-template#readme",
+  "version": "1.0.0",
+  "keywords": [],
+  "license": "ISC"
+}

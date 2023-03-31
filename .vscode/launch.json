@@ -52,6 +52,26 @@
 			],
 			"type": "pwa-node",
 			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "Test jsdoc parser",
+			"program": "${workspaceFolder}/libs/jsdoc-parser/test.js",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "pwa-node",
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "Build webview-vscode",
+			"program": "${workspaceFolder}/libs/webview-vscode/build.js",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "pwa-node",
+			"cwd": "${workspaceFolder}"
 		}
 	]
 }

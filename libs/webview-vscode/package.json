@@ -6,17 +6,17 @@
     "url": "git+https://github.com/leocll/vscode-extension-webview-template.git"
   },
   "author": "leocll <leocll@qq.com>",
-  "main": "./index.js",
+  "main": "./lib/index.js",
   "typings": "./index.d.ts",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "lib/**/*"
   ],
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^10.12.21",
     "@types/vscode": "^1.50.0",
-    "jsdoc-parser": "file:../jsdoc-parser"
+    "jsdoc-parser": "file:../jsdoc-parser",
+    "@leocll/vscode-webview": "file:./libs/vscode-webview"
   },
   "scripts": {
     "build": "node ./build.js"

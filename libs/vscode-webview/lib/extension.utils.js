@@ -1,7 +1,7 @@
 const vscode = require('vscode');
-const { WebviewVscodeApi, WebviewVscodeContextApi } = require('./webview.api');
+const { WebviewVscodeApi, WebviewVscodeContextApi } = require('./api');
 /**
- * @typedef {import('./webview.view').Webview} Webview
+ * @typedef {import('./view').Webview} Webview
  */
 /**
  * @template T

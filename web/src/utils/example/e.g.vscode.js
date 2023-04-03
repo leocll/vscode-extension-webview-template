@@ -1,4 +1,4 @@
-import { Vscode } from '../vscode.web';
+import { Vscode } from '@leocll/webview-vscode';
 
 /**
  * vscode API of business

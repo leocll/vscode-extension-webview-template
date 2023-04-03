@@ -1,6 +1,6 @@
 const path = require('os').platform() === 'win32' ? require('path').win32 : require('path');
 const vscode = require('vscode');
-const { ExtensionUtils } = require('../vscode/extension.utils');
+const { ExtensionUtils } = require('@leocll/vscode-webview');
 const { EGWebViewPanel, EGWebViewView } = require('./e.g.webview');
 
 const name = 'Example';

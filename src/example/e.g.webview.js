@@ -1,4 +1,4 @@
-const { WebviewPanel, WebviewView } = require('../vscode/webview.view');
+const { WebviewPanel, WebviewView } = require('@leocll/vscode-webview');
 
 /**
  * `EGWebViewPanel` business class

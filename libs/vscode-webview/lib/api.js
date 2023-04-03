@@ -126,29 +126,27 @@ class WebviewVscodeApi {
              * Show open dialog, select a or some local files or folders.
              * vscode的bug，在ubuntu下既选文件又选文件夹会很诡异，据官方文档windows也会出现诡异情况，https://code.visualstudio.com/api/references/vscode-api#OpenDialogOptions
              * 在ubuntu和windows下不要 canSelectFiles 和 canSelectFolders 同时为 true
-             * @typedef {{canSelectFiles?: boolean, canSelectFolders?: boolean, canSelectMany?: boolean, defaultUri?: string, filters?: {[name: string]: string[]}, openLabel?: string}} showOpenDialogOptions
-             * @property {boolean} canSelectFiles if can select files
-             * @property {boolean} canSelectFolders if can select folders
-             * @property {boolean} canSelectMany if can select many
-             * @property {string} defaultUri default open path
-             * @property {{[name: string]: string[]}} filters e.g.: `{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}`
-             * @property {string} openLabel button label, default: `open`
-             * @type {WebviewAsyncFunction<showOpenDialogOptions, string[]>}
+             * @typedef {Object} OpenDialogOptions
+             * @property {boolean} [canSelectFiles=true] - if can select files
+             * @property {boolean} [canSelectFolders=false] - if can select folders
+             * @property {boolean} [canSelectMany=false] - if can select many
+             * @property {string|import('vscode').Uri} [defaultUri] - default open path
+             * @property {{[name: string]: string[]}} [filters] - e.g.: `{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}`
+             * @property {string} [openLabel] - button label, default: `open`
+             */
+            /**
+             * @type {WebviewAsyncFunction<OpenDialogOptions, string[]>}
              */
             showOpenDialog: async (options) => {
                 // filters:undefined, // 筛选器，例如：{'Images': ['png', 'jpg'], 'TypeScript': ['ts', 'tsx']}
-                /**@type {showOpenDialogOptions} */
+                /**@type {OpenDialogOptions} */
                 const opts = {
                     canSelectFiles: true,
                     canSelectFolders: false,
                     canSelectMany: false,
-                    // defaultUri: undefined,
-                    // filters: undefined,
-                    // openLabel: undefined,
                 };
                 Object.assign(opts, options || {});
-                // @ts-ignore
-                opts.defaultUri && (opts.defaultUri = vscode.Uri.file(opts.defaultUri));
+                typeof opts.defaultUri === 'string' && (opts.defaultUri = vscode.Uri.file(opts.defaultUri));
                 // @ts-ignore
                 const uris = await vscode.window.showOpenDialog(opts);
                 return uris && uris.map(uri => uri.fsPath);

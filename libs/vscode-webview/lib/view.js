@@ -2,14 +2,14 @@ const vscode = require('vscode');
 const os = require('os');
 const path = os.platform() === 'win32' ? require('path').win32 : require('path');
 const fs = require('fs');
-const { Message } = require('./webview.message');
-const { WebviewHandler } = require('./webview.handler');
-const { WebviewData, WebviewDataApi } = require('./webview.data');
+const { Message } = require('./message');
+const { WebviewHandler } = require('./handler');
+const { WebviewData, WebviewDataApi } = require('./data');
 
 /**
- * @typedef {import('./webview.api').WebviewApi} WebviewApi
- * @typedef {import('./webview.message').PostMessageObject} PostMessageObject
- * @typedef {import('./webview.message').ReceivedMessageObject} ReceivedMessageObject
+ * @typedef {import('./api').WebviewApi} WebviewApi
+ * @typedef {import('./message').PostMessageObject} PostMessageObject
+ * @typedef {import('./message').ReceivedMessageObject} ReceivedMessageObject
  */
 /**
  * @typedef {{id: String, name: String, htmlPath: String}} WebviewOptions
@@ -274,7 +274,7 @@ class Webview {
 }
 
 /**
- * @typedef {import('./webview.api').WorkspaceFolder} WorkspaceFolder
+ * @typedef {import('./api').WorkspaceFolder} WorkspaceFolder
  * @typedef {{startPath?: String, platform: NodeJS.Platform, pathSep: String, extensionPath: String, workspaceFile?: String, workspaceFolders: WorkspaceFolder[]}} DefaultWebviewData
  */
 /**

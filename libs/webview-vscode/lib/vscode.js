@@ -1,20 +1,28 @@
-import MessageCenter from './web.message';
+import VscodeApi from './vscode.api';
+import MessageCenter from './message';
 
 /**
- * @typedef {import('./web.message').CMD} CMD - CMD
- * @typedef {import('./web.message').Message<any>} Message - Message
+ * @typedef {import('./message').CMD} CMD - CMD
+ * @typedef {import('./message').Message<any>} Message - Message
  * @typedef {{postMessage: (msg: CMD) => void, setState: (key: string, value: any) => void, getState: (key: string) => any}} VscodeOrigin - Origin vscodeApi
  */
 
-class VscodeBase {
+/**
+ * Vscode api for web
+ * @template T0
+ * @template T1
+ * @extends {VscodeApi<T0, T1>}
+ */
+class Vscode extends VscodeApi {
     /**
-     * @param {MessageCenter} [msgCenter=undefined] 
+     * @param {MessageCenter} [msgCenter=undefined]
      */
-     constructor(msgCenter=undefined) {
+    constructor(msgCenter=undefined) {
+        super();
         if (msgCenter) {
             this.$messageCenter = msgCenter;
         } else {
-            /** @type {VscodeOrigin} */
+            /**@type {VscodeOrigin} */
             const origin = (_ => {
                 try {
                     // @ts-ignore
@@ -58,54 +66,9 @@ class VscodeBase {
             // @ts-ignore
             window && window.addEventListener && window.addEventListener('message', this.$messageCenter.received);
         }
+        this.$post = this.$messageCenter.post;
+        this.$on = this.$messageCenter.on;
     }
 }
 
-class VscodeBaseApi extends VscodeBase {
-    /**
-     * Post message
-     * @param {CMD} msg
-     */
-    post = (msg) => {
-        return this.$messageCenter.post(msg);
-    }
-}
-
-class VscodeBaseOn extends VscodeBase {
-    /**
-     * On received message
-     * @param {String} cmd
-     * @param {(msg: Message) => void} callBack
-     * @param {number} [times=1]
-     */
-    on = (cmd, callBack, times = 1) => {
-        return this.$messageCenter.on(cmd, callBack, times);
-    }
-}
-
-/**
- * Vscode api for web
- * @class Vscode
- */
-class Vscode extends VscodeBase {
-    /**
-     * @param {MessageCenter} [msgCenter=undefined] 
-     */
-    constructor(msgCenter=undefined) {
-        super(msgCenter);
-        return new Proxy(this, {
-            get: (target, property, receiver) => {
-                const v = Reflect.get(target, property);
-                // @ts-ignore
-                return v === undefined ? (data) => this.$messageCenter.post({ cmd: property, args: data, reply: true }) : v;
-            }
-        });
-    }
-}
-
-export {
-    VscodeBase,
-    VscodeBaseApi,
-    VscodeBaseOn,
-    Vscode,
-};
+export default Vscode;

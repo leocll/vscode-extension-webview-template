@@ -1,5 +1,5 @@
 /**
- * @typedef {import('./webview.message').ReceivedMessageObject} ReceivedMessageObject
+ * @typedef {import('./message').ReceivedMessageObject} ReceivedMessageObject
  */
 /**
  * WebviewHandler to received message from `web` to `vscode`

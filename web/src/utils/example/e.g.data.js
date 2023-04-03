@@ -1,4 +1,4 @@
-import { WebviewData } from '../vscode.web';
+import { WebviewData } from '@leocll/webview-vscode';
 
 /**
  * Data of business

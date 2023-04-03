@@ -85,8 +85,8 @@ class SyncData {
     }
 }
 /**
- * @typedef {import('./web.vscode').default} Vscode - Vscode hook in web
- * @typedef {import('../../../../src/vscode/webview.view').DefaultWebviewData} DefaultWebviewData
+ * @typedef {import('./vscode').default} Vscode - Vscode hook in web
+ * @typedef {import('@leocll/vscode-webview/lib/view').DefaultWebviewData} DefaultWebviewData
  */
 /**
  * Data for `globalState`,`workspaceState`,`webviewData`

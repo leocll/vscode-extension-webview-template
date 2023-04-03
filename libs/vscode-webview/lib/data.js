@@ -98,7 +98,12 @@ class WebviewData {
     // };
 }
 /**
- * @typedef {import('./webview.api').WebviewApi} WebviewApi
+ * @template A
+ * @template R
+ * @typedef {import('./api').WebviewSyncFunction<A, R>} WebviewSyncFunction
+ */
+/**
+ * @typedef {import('./api').WebviewApi} WebviewApi
  */
 /**
  * Webview api for webview data
@@ -114,12 +119,18 @@ class WebviewDataApi {
         /**@type {WebviewData<T>} */
         this.data = data;
         this.api = {
-            /**@type {() => Promise<T>} - Get webview data */
-            getWebviewData: async () => {
+            /**
+             * Get webview data
+             * @type {WebviewSyncFunction<void, T>}
+             */
+            getWebviewData: () => {
                 return {...this.data.cache};
             },
-            /**@type {(items: T) => Promise<void>} - Update webview data */
-            updateWebviewData: async (items) => {
+            /**
+             * Update webview data
+             * @type {WebviewSyncFunction<T, void>}
+             */
+            updateWebviewData: (items) => {
                 this.data.update(items, false);
             },
         };

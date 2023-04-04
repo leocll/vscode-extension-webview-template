@@ -51,6 +51,7 @@ class SyncData {
     set = (key, value, isSync=true) => {
         if (!this.cache) { return this; }
         this.cache[key] = value;
+        // @ts-ignore
         isSync && this.sync({[key]: value});
         return this;
     }

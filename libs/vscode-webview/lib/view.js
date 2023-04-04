@@ -222,7 +222,9 @@ class Webview {
         let html = fs.readFileSync(htmlPath, 'utf-8');
         const doc = htmlparser2.parseDocument(html);
         const convertUri = (uri) => {
-            uri.indexOf('/static') === 0 && (uri = `.${uri}`);
+            if (uri.indexOf('/static') === 0) (uri = `.${uri}`);
+            else if (uri.indexOf('/css') === 0) (uri = `.${uri}`);
+            else if (uri.indexOf('/js') === 0) (uri = `.${uri}`);
             const f = vscode.Uri.file(path.resolve(dirPath, uri));
             if (this.view.webview.asWebviewUri) {
                 return `${this.view.webview.asWebviewUri(f)}`;

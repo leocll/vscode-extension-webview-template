@@ -46,10 +46,18 @@ const VscodeApi = {
  */
 class VscodeBaseApi {
     constructor() {
-		/**@type {import('./message').default} */
-		this.$messageCenter = undefined;
-        this.$post = this.$messageCenter.post;
-        this.$on = this.$messageCenter.on;
+        /**
+         * Post message
+         * @abstract
+         * @type {({cmd, args, reply, p2p, timeout}: import('./message').CMD, ext?: {[name: string]: any}) => Promise<import('./message')._Message>|undefined}
+         */
+        this.$post = undefined;
+        /**
+         * Subscribe message
+        * @abstract
+         * @type {(cmd: string, handler: import('./message').MessageHandler, once?: boolean) => import('./message').default}
+         */
+        this.$on = undefined;
     }
 }`.trim(),
     ]

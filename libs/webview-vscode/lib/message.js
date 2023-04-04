@@ -46,32 +46,31 @@ class MessageCenter {
          * @type {({cmd, args, reply, p2p, timeout}: CMD, ext?: {[name: string]: any}) => Promise<_Message>|undefined}
          */
         this.post = ({ cmd, args=undefined, reply=true, p2p=true, timeout=0 }, ext={}) => {
-            ext.cmd = cmd;
-            ext.args = args;
-            ext.reply = reply;
-            ext.p2p = p2p;
+            /**@type {_Message} */
+            // @ts-ignore
+            const msg = { cmd, args, reply, p2p, ...ext };
             if (reply && p2p) {
                 this._index += 1;
-                ext.index = this._index; // 1 on 1
+                msg.index = this._index; // 1 on 1
             }
             if (reply) {
                 return new Promise((resolve, _) => {
                     try {
                         const ff = () => {
-                            const cmd = getCmdFromMessage(ext);
-                            this.on(cmd, resolve);
+                            const cmd = getCmdFromMessage(msg);
+                            this.on(cmd, resolve, true);
                             timeout > 0 && setTimeout(() => {
-                                ext.data = { status: 0, description: 'Operate timeout.' }
-                                resolve(ext);
+                                msg.data = { status: 0, description: 'Operate timeout.' }
+                                resolve(msg);
                                 this.off(cmd, resolve);
                             }, timeout);
                         };
-                        const promise = poster && poster.postMessage && poster.postMessage(ext);
+                        const promise = poster && poster.postMessage && poster.postMessage(msg);
                         if (promise && promise.then) {
                             promise.then((err) => {
                                 if (err) {
-                                    ext.data = { status: 0, description: err ? (err.message || err.toString()) : 'Unknown error.' };
-                                    resolve(ext);
+                                    msg.data = { status: 0, description: err ? (err.message || err.toString()) : 'Unknown error.' };
+                                    resolve(msg);
                                 } else {
                                     ff();
                                 }
@@ -80,12 +79,12 @@ class MessageCenter {
                             ff();
                         }
                     } catch (e) {
-                        ext.data = { status: 0, description: e ? (e.message || e.toString()) : 'Unknown error.' }
-                        resolve(ext);
+                        msg.data = { status: 0, description: e ? (e.message || e.toString()) : 'Unknown error.' }
+                        resolve(msg);
                     }
                 });
             } else {
-                poster && poster.postMessage && poster.postMessage(ext);
+                poster && poster.postMessage && poster.postMessage(msg);
             }
         };
 
@@ -94,7 +93,7 @@ class MessageCenter {
          * @type {(cmd: string, handler: MessageHandler, once?: boolean) => MessageCenter}
          */
         this.on = (cmd, handler, once=true) => {
-            (once ? this._emitter.once : this._emitter.on)(cmd, handler);
+            once ? this._emitter.once(cmd, handler) : this._emitter.on(cmd, handler);
             return this;
         };
 
@@ -104,8 +103,8 @@ class MessageCenter {
          */
         this._emitMessage = (message) => {
             const cmd = getCmdFromMessage(message);
-            console.log(`Received message: ${cmd}\n`, message.data);
-            this._emitter.emit(cmd, message.data) || console.log(`Not Found message handler: ${cmd}\n`);
+            console.log(`Received message: ${cmd}\n`, message);
+            this._emitter.emit(cmd, message) || console.log(`Not Found message handler: ${cmd}\n`);
             return this;
         };
 

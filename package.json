@@ -103,8 +103,8 @@
         "typescript": "^3.3.1"
     },
     "dependencies": {
+        "@leocll/vscode-webview": "file:./libs/vscode-webview",
         "htmlparser2": "^7.2.0",
-        "request": "^2.88.2",
-        "@leocll/vscode-webview": "file:./libs/vscode-webview"
+        "request": "^2.88.2"
     }
 }

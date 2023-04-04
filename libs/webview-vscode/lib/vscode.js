@@ -53,12 +53,20 @@ class Vscode extends VscodeApi {
                                     console.error(e.message);
                                 } */
                                 console.error("Not Found: 'acquireVsCodeApi'");
+                                throw "Not Found: 'acquireVsCodeApi'";
                             } else {
                                 console.error("Not Found: 'acquireVsCodeApi'");
+                                throw "Not Found: 'acquireVsCodeApi'";
                             }
                         },
-                        setState: (key, value) => { console.error("Not Found: 'acquireVsCodeApi'"); },
-                        getState: (key) => { console.error("Not Found: 'acquireVsCodeApi'"); }
+                        setState: (key, value) => {
+                            console.error("Not Found: 'acquireVsCodeApi'");
+                            throw "Not Found: 'acquireVsCodeApi'";
+                        },
+                        getState: (key) => {
+                            console.error("Not Found: 'acquireVsCodeApi'");
+                            throw "Not Found: 'acquireVsCodeApi'";
+                        }
                     };
                 }
             })();

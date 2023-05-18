@@ -1,15 +1,22 @@
 {
   "name": "vscode-webview",
+  "version": "1.0.0",
   "description": "vscode extension webview api.",
+  "author": "leocll <leocll@qq.com>",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/leocll/vscode-extension-webview-template.git"
   },
-  "author": "leocll <leocll@qq.com>",
-  "main": "./lib/index.js",
-  "typings": "./index.d.ts",
-  "files": [
-    "lib/**/*"
+  "keywords": [
+    "vscode",
+    "webview"
   ],
   "dependencies": {
     "htmlparser2": "^7.2.0",
@@ -19,13 +26,8 @@
     "@types/node": "^10.12.21",
     "@types/vscode": "^1.50.0"
   },
-  "scripts": {
-  },
   "bugs": {
     "url": "https://github.com/leocll/vscode-extension-webview-template/issues"
   },
-  "homepage": "https://github.com/leocll/vscode-extension-webview-template#readme",
-  "version": "1.0.0",
-  "keywords": [],
-  "license": "ISC"
+  "homepage": "https://github.com/leocll/vscode-extension-webview-template#readme"
 }
